@@ -98,6 +98,12 @@ func (Idb *InDB) CreateTahunAkademik(c *gin.Context) {
 
 func (Idb *InDB) GetAcademicSummary(c *gin.Context) {
 	var currentTahunAkademik structs.Tahun_akademik
+	AuthorizationHeader := c.GetHeader("Authorization")
+	claims := helper.ExtractToken(strings.Replace(AuthorizationHeader, "Bearer ", "", -1))
+	if claims == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token tidak valid"})
+		return
+	}
 	if err := Idb.DB.Table("tahun_akademiks").Where("status = ?", "aktif").First(&currentTahunAkademik).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil tahun akademik aktif"})
 		return

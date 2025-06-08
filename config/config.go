@@ -13,8 +13,8 @@ import (
 
 func ConnectDB() (*gorm.DB, error) {
 	// Get database configuration from environment variables or use defaults
-	dbUser := getEnv("DB_USER", "simpadu_user")
-	dbPass := getEnv("DB_PASSWORD", "password_yang_aman")
+	dbUser := getEnv("DB_USER", "root")
+	dbPass := getEnv("DB_PASSWORD", "")
 	dbHost := getEnv("DB_HOST", "127.0.0.1")
 	dbPort := getEnv("DB_PORT", "3306")
 	dbName := getEnv("DB_NAME", "simpadu")

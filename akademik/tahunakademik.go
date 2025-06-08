@@ -104,23 +104,27 @@ func (Idb *InDB) GetAcademicSummary(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token tidak valid"})
 		return
 	}
-	if err := Idb.DB.Table("tahun_akademiks").Where("status = ?", "aktif").First(&currentTahunAkademik).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil tahun akademik aktif"})
+
+	if err := Idb.DB.Table("tahun_akademiks").Where("status = ?", "Aktif").First(&currentTahunAkademik).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil tahun akademik aktif: " + err.Error()})
 		return
 	}
 
 	var totalKelas int64
 	if err := Idb.DB.Table("kelas").Where("kode_tahun_akademik = ?", currentTahunAkademik.Kode_tahun_akademik).Count(&totalKelas).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghitung total kelas"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghitung total kelas: " + err.Error()})
 		return
 	}
 
 	var totalMahasiswa int64
-	if err := Idb.DB.Table("mahasiswas").
+	query := Idb.DB.Table("mahasiswas").
+		Select("COUNT(DISTINCT mahasiswas.nim)").
 		Joins("JOIN kelas_mahasiswas ON mahasiswas.nim = kelas_mahasiswas.nim").
 		Joins("JOIN kelas ON kelas_mahasiswas.kelas_id = kelas.id").
-		Where("kelas.kode_tahun_akademik = ?", currentTahunAkademik.Kode_tahun_akademik).Count(&totalMahasiswa).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghitung total mahasiswa"})
+		Where("kelas.kode_tahun_akademik = ?", currentTahunAkademik.Kode_tahun_akademik)
+
+	if err := query.Count(&totalMahasiswa).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghitung total mahasiswa: " + err.Error()})
 		return
 	}
 

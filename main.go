@@ -81,7 +81,6 @@ func main() {
 	r.POST("/register-mahasiswa", RegisterUser)
 	r.POST("/register-admin-prodi", RegisterAdminProdi)
 	r.POST("/login", Login)
-	r.GET("/profile", AuthMiddleware(), Profile)
 
 	// Kelas routes
 	r.GET("/kelas", AuthMiddleware(), kelasHandler.GetAllKelas)
@@ -92,6 +91,7 @@ func main() {
 	r.GET("/tahun-akademik", AuthMiddleware(), tahunAkademikHandler.GetAllTahunAkademik)
 	r.POST("/create-tahun-akademik", AuthMiddleware(), tahunAkademikHandler.CreateTahunAkademik)
 	r.GET("/tahun-akademik/:id", AuthMiddleware(), tahunAkademikHandler.GetTahunAkademikByID)
+	r.GET("/akademik-summary", AuthMiddleware(), tahunAkademikHandler.GetAcademicSummary)
 
 	// Absensi routes
 	r.POST("/buka-pertemuan", AuthMiddleware(), absensiHandler.BukaPertemuan)
@@ -563,6 +563,12 @@ func Profile(c *gin.Context) {
 			Role_name: "Admin Akademik",
 			Status:    user.Status,
 		})
+	case "admin":
+		response.Roles = append(response.Roles, structs.User_role_detail{
+			Role_code: "admin",
+			Role_name: "Administrator",
+			Status:    user.Status,
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -610,6 +616,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			// Validasi role
 			role := claims["role"].(string)
 			validRoles := map[string]bool{
+				"admin":          true,
 				"admin_akademik": true,
 				"admin_prodi":    true,
 				"dosen":          true,

@@ -94,5 +94,36 @@ func (Idb *InDB) CreateTahunAkademik(c *gin.Context) {
 		"message": "Berhasil Membuat Tahun Akademik",
 		"data":    tahun_akademik,
 	})
+}
 
+func (Idb *InDB) GetAcademicSummary(c *gin.Context) {
+	var currentTahunAkademik structs.Tahun_akademik
+	if err := Idb.DB.Table("tahun_akademiks").Where("status = ?", "aktif").First(&currentTahunAkademik).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil tahun akademik aktif"})
+		return
+	}
+
+	var totalKelas int64
+	if err := Idb.DB.Table("kelas").Where("kode_tahun_akademik = ?", currentTahunAkademik.Kode_tahun_akademik).Count(&totalKelas).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghitung total kelas"})
+		return
+	}
+
+	var totalMahasiswa int64
+	if err := Idb.DB.Table("mahasiswas").
+		Joins("JOIN kelas_mahasiswas ON mahasiswas.nim = kelas_mahasiswas.nim").
+		Joins("JOIN kelas ON kelas_mahasiswas.kelas_id = kelas.id").
+		Where("kelas.kode_tahun_akademik = ?", currentTahunAkademik.Kode_tahun_akademik).Count(&totalMahasiswa).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghitung total mahasiswa"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":          http.StatusOK,
+		"message":         "Berhasil mengambil ringkasan akademik",
+		"tahun_akademik":  currentTahunAkademik.Tahun,
+		"semester":        currentTahunAkademik.Semester,
+		"total_kelas":     totalKelas,
+		"total_mahasiswa": totalMahasiswa,
+	})
 }

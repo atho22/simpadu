@@ -42,25 +42,62 @@ type Prodi struct {
 	Created_at   time.Time `json:"created_at"`
 	Updated_at   time.Time `json:"updated_at"`
 }
+
+type Struktural_Jurusan struct {
+	ID           uint      `gorm:"primaryKey"`
+	User_id      string    `gorm:"size:20;not null;unique"` // relasi ke users
+	Kode_jurusan string    `gorm:"size:20;not null"`
+	Nama         string    `gorm:"size:100;not null"`
+	Nama_lengkap string    `gorm:"size:100;not null"`
+	Alamat       string    `gorm:"size:100"`
+	No_hp        string    `gorm:"size:15"`
+	Email        string    `gorm:"size:100"`
+	NIP          string    `gorm:"column:NIP;size:30;unique"`
+	Jabatan      string    `gorm:"size:50"`
+	Created_at   time.Time `json:"created_at"`
+	Updated_at   time.Time `json:"updated_at"`
+}
 type Struktural_prodi struct {
+	ID           uint   `gorm:"primaryKey"`
+	User_id      string `gorm:"size:20;not null;unique"` // relasi ke users
+	Kode_prodi   string `gorm:"size:20;not null"`        // relasi ke prodi
+	Nama         string `gorm:"size:100;not null"`
+	Nama_lengkap string `gorm:"size:100;not null"`
+	Alamat       string `gorm:"size:100"`
+	No_hp        string `gorm:"size:15"`
+	Email        string `gorm:"size:100"`
+	NIP          string `gorm:"column:NIP;size:30;unique"`
+	Jabatan      string `gorm:"size:50"` // opsional: ketua, sekretaris , admin prodi
+	NoSK         string `gorm:"size:50"`
+	TanggalSK    time.Time
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type Staff_akademik struct {
 	ID         uint   `gorm:"primaryKey"`
 	User_id    string `gorm:"size:20;not null;unique"` // relasi ke users
-	Kode_prodi string `gorm:"size:20;not null"`        // relasi ke prodi
 	Nama       string `gorm:"size:100;not null"`
-	N_ip       string `gorm:"size:30;unique"` // diubah dari NIP ke n_ip
-	Jabatan    string `gorm:"size:50"`        // opsional: ketua, sekretaris , admin prodi
-	NoSK       string `gorm:"size:50"`
-	TanggalSK  time.Time
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	Alamat     string `gorm:"size:100"`
+	No_hp      string `gorm:"size:15"`
+	Email      string `gorm:"size:100"`
+	Status     string `gorm:"type:enum('Aktif','Tidak Aktif');default:'Aktif'"`
+	Bagian     string `gorm:"size:100"`
+	Created_at time.Time
+	Updated_at time.Time
 }
 
 type Dosen struct {
 	ID         uint      `gorm:"primaryKey" json:"id"`
 	User_id    string    `gorm:"size:20;not null" json:"user_id"`
 	Kode_dosen string    `gorm:"size:20;not null" json:"kode_dosen"`
-	NIP        string    `gorm:"size:20" json:"nip"`
+	NIP        string    `gorm:"column:NIP;size:30;unique"`
+	Nama       string    `gorm:"size:100;not null" json:"nama"`
 	Nidn       string    `gorm:"size:20" json:"nidn"`
+	Status     string    `gorm:"type:enum('Aktif','Tidak Aktif');default:'Aktif'"`
+	Alamat     string    `gorm:"size:100"`
+	No_hp      string    `gorm:"size:15"`
+	Email      string    `gorm:"size:100"`
 	Kode_prodi string    `gorm:"size:20;not null" json:"kode_prodi"`
 	Created_at time.Time `json:"created_at"`
 	Updated_at time.Time `json:"updated_at"`
@@ -78,11 +115,17 @@ type Kelas struct {
 }
 
 type Mahasiswa struct {
-	ID         int       `gorm:"primaryKey;autoIncrement" json:"id"`
-	User_id    string    `gorm:"size:20;not null" json:"user_id"`
-	NIM        string    `gorm:"size:20;not null" json:"nim"`
-	Nama       string    `gorm:"size:100;not null" json:"nama"`
-	Angkatan   uint      `gorm:"not null" json:"angkatan"`
+	ID            int    `gorm:"primaryKey;autoIncrement" json:"id"`
+	User_id       string `gorm:"size:20;not null" json:"user_id"`
+	NIM           string `gorm:"size:20;not null" json:"nim"`
+	Nama          string `gorm:"size:100;not null" json:"nama"`
+	Angkatan      uint   `gorm:"not null" json:"angkatan"`
+	Status        string `gorm:"size:20;not null" json:"status"`
+	Jenis_kelamin string `gorm:"size:20;not null" json:"jenis_kelamin"`
+
+	Alamat     string    `gorm:"size:100"`
+	No_hp      string    `gorm:"size:15"`
+	Email      string    `gorm:"size:100"`
 	Kode_prodi string    `gorm:"size:20;not null" json:"kode_prodi"`
 	Created_at time.Time `json:"created_at"`
 	Updated_at time.Time `json:"updated_at"`

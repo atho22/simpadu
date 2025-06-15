@@ -1,15 +1,23 @@
-# Dokumentasi API Simpadu
+# API Documentation - kelompok1
 
-## URL Dasar
-```
-http://localhost:8080
+## Informasi Umum
+- **Base URL** : `https://ti054c01.agussbn.my.id`
+- **Format** : JSON (kecuali upload menggunakan form-data)
+- **Autentikasi** : JWT via header Authorization & Role
+- **File Upload** : tersedia di endpoint tertentu, file disimpan di folder `/uploads`
+- **Response Autentikasi**: Untuk setiap endpoint yang memiliki autentikasi akan melalui 2 buah middleware autentikasi.
+
+Jika **tidak ada token** akan mengembalikan response code (401).
+Jika **token tidak valid** akan mengembalikan response code (403).
+Jika **endpoint diakses oleh yang bukan rolenya** akan mengembalikan response json:
+
+```json
+{
+  "message": "Access Denied!"
+}
 ```
 
-## Autentikasi
-Sebagian besar endpoint memerlukan autentikasi menggunakan token JWT. Sertakan token dalam header Authorization:
-```
-Authorization: Bearer <token_jwt_anda>
-```
+---
 
 ## Endpoint
 
@@ -40,20 +48,34 @@ Authorization: Bearer <token_jwt_anda>
 - **URL**: `/register-admin-prodi`
 - **Method**: `POST`
 - **Deskripsi**: Mendaftarkan admin program studi baru
+- **Header**: Memerlukan token JWT (hanya admin akademik).
 - **Body Permintaan**:
   ```json
   {
-    "user_id": "string",
+    "username": "string",
+    "email": "string",
+    "password": "string",
+    "nama": "string",
     "nip": "string",
+    "prodi": "string",
     "jabatan": "string",
-    "kode_prodi": "string"
+    "no_sk": "string",
+    "tanggal_sk": "datetime"
   }
   ```
-- **Respon**:
+- **Respon Sukses (200)**:
   ```json
   {
-    "message": "Admin prodi berhasil disimpan",
-    "user_id": "string"
+    "message": "Registrasi berhasil",
+    "data": {
+      "user_id": "string",
+      "username": "string",
+      "email": "string",
+      "nama": "string",
+      "prodi": "string",
+      "nip": "string",
+      "jabatan": "string"
+    }
   }
   ```
 
@@ -68,11 +90,17 @@ Authorization: Bearer <token_jwt_anda>
     "password": "string"
   }
   ```
-- **Respon**:
+- **Respon Sukses (200)**:
   ```json
   {
     "message": "Login berhasil",
-    "token": "string"
+    "token": "string",
+    "user": {
+      "user_id": "string",
+      "email": "string",
+      "role": "string",
+      "nama": "string"
+    }
   }
   ```
 
@@ -83,18 +111,24 @@ Authorization: Bearer <token_jwt_anda>
 - **Method**: `GET`
 - **Deskripsi**: Mendapatkan informasi profil pengguna saat ini
 - **Header**: Memerlukan token JWT
-- **Respon**:
+- **Respon Sukses (200)**:
   ```json
   {
-    "status": 200,
-    "message": "Berhasil mendapatkan profil",
+    "message": "Profile berhasil diambil",
     "data": {
-      "id": "number",
       "user_id": "string",
       "username": "string",
       "email": "string",
-      "role": "string",
-      "status": "string"
+      "status": "string",
+      "nama": "string",
+      "roles": [
+        {
+          "role_code": "string",
+          "role_name": "string",
+          "kode_prodi": "string",
+          "status": "string"
+        }
+      ]
     }
   }
   ```
@@ -104,19 +138,19 @@ Authorization: Bearer <token_jwt_anda>
 #### Dapatkan Semua Kelas
 - **URL**: `/kelas`
 - **Method**: `GET`
-- **Deskripsi**: Mendapatkan daftar semua kelas
-- **Header**: Memerlukan token JWT
-- **Respon**:
+- **Deskripsi**: Mendapatkan daftar semua kelas.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
   ```json
   {
     "message": "Berhasil Mengambil Data Kelas",
     "data": [
       {
         "id": "number",
-        "kode": "string",
+        "kode_kelas": "string",
         "nama": "string",
         "kode_prodi": "string",
-        "tahun_akademik_id": "number",
+        "kode_tahun_akademik": "string",
         "created_by": "string",
         "created_at": "datetime",
         "updated_at": "datetime"
@@ -128,8 +162,8 @@ Authorization: Bearer <token_jwt_anda>
 #### Buat Kelas
 - **URL**: `/create-kelas`
 - **Method**: `POST`
-- **Deskripsi**: Membuat kelas baru
-- **Header**: Memerlukan token JWT
+- **Deskripsi**: Membuat kelas baru.
+- **Header**: Memerlukan token JWT.
 - **Body Permintaan**:
   ```json
   {
@@ -139,16 +173,16 @@ Authorization: Bearer <token_jwt_anda>
     "tahun_akademik_id": "number"
   }
   ```
-- **Respon**:
+- **Respon Sukses (200)**:
   ```json
   {
     "message": "Kelas Berhasil Dibuat",
     "data": {
       "id": "number",
-      "kode": "string",
+      "kode_kelas": "string",
       "nama": "string",
       "kode_prodi": "string",
-      "tahun_akademik_id": "number",
+      "kode_tahun_akademik": "string",
       "created_by": "string",
       "created_at": "datetime",
       "updated_at": "datetime"
@@ -160,20 +194,18 @@ Authorization: Bearer <token_jwt_anda>
 #### Detail Kelas
 - **URL**: `/kelas/:id`
 - **Method**: `GET`
-- **Deskripsi**: Mendapatkan detail kelas berdasarkan ID
-- **Header**: Memerlukan token JWT
-- **Respon**:
+- **Deskripsi**: Mendapatkan detail kelas berdasarkan ID.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
   ```json
   {
     "message": "Berhasil Mengambil Data Kelas",
     "data": {
-      "id": "number",
       "kode": "string",
       "nama": "string",
       "kode_prodi": "string",
       "nama_prodi": "string",
       "tahun_akademik": {
-        "id": "number",
         "tahun": "string",
         "semester": "string",
         "status": "string"
@@ -205,9 +237,9 @@ Authorization: Bearer <token_jwt_anda>
 #### Dapatkan Semua Tahun Akademik
 - **URL**: `/tahun-akademik`
 - **Method**: `GET`
-- **Deskripsi**: Mendapatkan daftar semua tahun akademik
-- **Header**: Memerlukan token JWT
-- **Respon**:
+- **Deskripsi**: Mendapatkan daftar semua tahun akademik.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
   ```json
   {
     "status": 200,
@@ -215,6 +247,7 @@ Authorization: Bearer <token_jwt_anda>
     "data": [
       {
         "id": "number",
+        "kode_tahun_akademik": "string",
         "tahun": "string",
         "semester": "string",
         "status": "string",
@@ -230,8 +263,8 @@ Authorization: Bearer <token_jwt_anda>
 #### Buat Tahun Akademik
 - **URL**: `/create-tahun-akademik`
 - **Method**: `POST`
-- **Deskripsi**: Membuat tahun akademik baru
-- **Header**: Memerlukan token JWT
+- **Deskripsi**: Membuat tahun akademik baru.
+- **Header**: Memerlukan token JWT.
 - **Body Permintaan**:
   ```json
   {
@@ -242,13 +275,14 @@ Authorization: Bearer <token_jwt_anda>
     "tanggal_selesai": "datetime"
   }
   ```
-- **Respon**:
+- **Respon Sukses (200)**:
   ```json
   {
     "status": 200,
     "message": "Berhasil Membuat Tahun Akademik",
     "data": {
       "id": "number",
+      "kode_tahun_akademik": "string",
       "tahun": "string",
       "semester": "string",
       "status": "string",
@@ -263,14 +297,15 @@ Authorization: Bearer <token_jwt_anda>
 #### Dapatkan Tahun Akademik berdasarkan ID
 - **URL**: `/tahun-akademik/:id`
 - **Method**: `GET`
-- **Deskripsi**: Mendapatkan tahun akademik tertentu berdasarkan ID
-- **Header**: Memerlukan token JWT
-- **Respon**:
+- **Deskripsi**: Mendapatkan tahun akademik tertentu berdasarkan ID.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
   ```json
   {
     "message": "Berhasil Mengambil Data Tahun Akademik",
     "data": {
       "id": "number",
+      "kode_tahun_akademik": "string",
       "tahun": "string",
       "semester": "string",
       "status": "string",
@@ -282,14 +317,31 @@ Authorization: Bearer <token_jwt_anda>
   }
   ```
 
+#### Dapatkan Ringkasan Akademik
+- **URL**: `/akademik-summary`
+- **Method**: `GET`
+- **Deskripsi**: Mendapatkan ringkasan akademik (total kelas dan mahasiswa) untuk tahun akademik aktif.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
+  ```json
+  {
+    "status": 200,
+    "message": "Berhasil mengambil ringkasan akademik",
+    "tahun_akademik": "string",
+    "semester": "string",
+    "total_kelas": "number",
+    "total_mahasiswa": "number"
+  }
+  ```
+
 ### Mata Kuliah
 
 #### Dapatkan Semua Mata Kuliah
 - **URL**: `/matakuliah`
 - **Method**: `GET`
-- **Deskripsi**: Mendapatkan daftar semua mata kuliah
-- **Header**: Memerlukan token JWT
-- **Respon**:
+- **Deskripsi**: Mendapatkan daftar semua mata kuliah.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
   ```json
   {
     "data": [
@@ -300,6 +352,7 @@ Authorization: Bearer <token_jwt_anda>
         "kode_prodi": "string",
         "sks": "number",
         "semester": "number",
+        "kode_tahun_akademik": "string",
         "status": "string",
         "created_at": "datetime",
         "created_by": "string",
@@ -312,8 +365,8 @@ Authorization: Bearer <token_jwt_anda>
 #### Buat Mata Kuliah
 - **URL**: `/create-matakuliah`
 - **Method**: `POST`
-- **Deskripsi**: Membuat mata kuliah baru
-- **Header**: Memerlukan token JWT
+- **Deskripsi**: Membuat mata kuliah baru.
+- **Header**: Memerlukan token JWT.
 - **Body Permintaan**:
   ```json
   {
@@ -321,10 +374,11 @@ Authorization: Bearer <token_jwt_anda>
     "nama_matakuliah": "string",
     "sks": "number",
     "semester": "number",
-    "kode_prodi": "string"
+    "kode_prodi": "string",
+    "kode_tahun_akademik": "string"
   }
   ```
-- **Respon**:
+- **Respon Sukses (200)**:
   ```json
   {
     "message": "Matakuliah Berhasil Dibuat"
@@ -334,9 +388,9 @@ Authorization: Bearer <token_jwt_anda>
 #### Detail Mata Kuliah
 - **URL**: `/matakuliah/:kode_matakuliah`
 - **Method**: `GET`
-- **Deskripsi**: Mendapatkan detail mata kuliah berdasarkan kode
-- **Header**: Memerlukan token JWT
-- **Respon**:
+- **Deskripsi**: Mendapatkan detail mata kuliah berdasarkan kode.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
   ```json
   {
     "data": {
@@ -346,6 +400,7 @@ Authorization: Bearer <token_jwt_anda>
       "kode_prodi": "string",
       "sks": "number",
       "semester": "number",
+      "kode_tahun_akademik": "string",
       "status": "string",
       "created_at": "datetime",
       "created_by": "string",
@@ -357,749 +412,643 @@ Authorization: Bearer <token_jwt_anda>
 ## Jadwal Mata Kuliah
 
 ### 1. Membuat Jadwal Baru
-```http
-POST /jadwal/
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-    "kode_matakuliah": "TI101",
-    "kelas_id": 1,
-    "kode_dosen": "DSN001",
-    "kode_ruangan": "A-LAB-1",
-    "kode_prodi": "TI",
-    "jam_mulai": "2024-03-18T08:00:00Z",
-    "jam_selesai": "2024-03-18T09:30:00Z",
-    "hari": "Senin",
-    "kode_tahun_akademik": "2023-2024-Ganjil"
-}
-```
-
-Response Sukses (200):
-```json
-{
+- **URL**: `/jadwal/`
+- **Method**: `POST`
+- **Deskripsi**: Membuat jadwal mata kuliah baru.
+- **Header**: Memerlukan token JWT (hanya admin prodi atau admin akademik).
+- **Body Permintaan**:
+  ```json
+  {
+    "kode_matakuliah": "string",
+    "kelas_id": "number",
+    "kode_dosen": "string",
+    "kode_ruangan": "string",
+    "kode_prodi": "string",
+    "jam_mulai": "datetime",
+    "jam_selesai": "datetime",
+    "hari": "string",
+    "kode_tahun_akademik": "string"
+  }
+  ```
+- **Respon Sukses (200)**:
+  ```json
+  {
     "message": "Jadwal berhasil dibuat",
     "data": {
-        "id": 1,
-        "kode_matakuliah": "TI101",
-        "kelas_id": 1,
-        "kode_dosen": "DSN001",
-        "kode_ruangan": "A-LAB-1",
-        "kode_prodi": "TI",
-        "jam_mulai": "2024-03-18T08:00:00Z",
-        "jam_selesai": "2024-03-18T09:30:00Z",
-        "hari": "Senin",
-        "kode_tahun_akademik": "2023-2024-Ganjil",
-        "created_at": "2024-03-18T07:00:00Z",
-        "created_by": "ADM001"
+      "id": "number",
+      "kode_matakuliah": "string",
+      "kelas_id": "number",
+      "kode_dosen": "string",
+      "kode_ruangan": "string",
+      "kode_prodi": "string",
+      "jam_mulai": "datetime",
+      "jam_selesai": "datetime",
+      "hari": "string",
+      "kode_tahun_akademik": "string",
+      "created_at": "datetime",
+      "created_by": "string"
     }
-}
-```
+  }
+  ```
 
 ### 2. Melihat Jadwal per Kelas
-```http
-GET /jadwal/kelas/1
-```
-
-Response Sukses (200):
-```json
-{
+- **URL**: `/jadwal/kelas/:kelas_id`
+- **Method**: `GET`
+- **Deskripsi**: Melihat jadwal mata kuliah untuk kelas tertentu.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
+  ```json
+  {
     "data": [
-        {
-            "id": 1,
-            "kode_matakuliah": "TI101",
-            "kelas_id": 1,
-            "kode_dosen": "DSN001",
-            "kode_ruangan": "A-LAB-1",
-            "jam_mulai": "2024-03-18T08:00:00Z",
-            "jam_selesai": "2024-03-18T09:30:00Z",
-            "hari": "Senin"
-        }
+      {
+        "id": "number",
+        "kode_matakuliah": "string",
+        "kelas_id": "number",
+        "kode_dosen": "string",
+        "kode_ruangan": "string",
+        "kode_prodi": "string",
+        "jam_mulai": "datetime",
+        "jam_selesai": "datetime",
+        "hari": "string",
+        "kode_tahun_akademik": "string",
+        "created_at": "datetime",
+        "created_by": "string",
+        "updated_at": "datetime"
+      }
     ]
-}
-```
+  }
+  ```
 
 ### 3. Melihat Jadwal per Dosen
-```http
-GET /jadwal/dosen/DSN001
-```
-
-Response Sukses (200):
-```json
-{
+- **URL**: `/jadwal/dosen/:kode_dosen`
+- **Method**: `GET`
+- **Deskripsi**: Melihat jadwal mata kuliah untuk dosen tertentu.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
+  ```json
+  {
     "data": [
-        {
-            "id": 1,
-            "kode_matakuliah": "TI101",
-            "kelas_id": 1,
-            "kode_dosen": "DSN001",
-            "kode_ruangan": "A-LAB-1",
-            "jam_mulai": "2024-03-18T08:00:00Z",
-            "jam_selesai": "2024-03-18T09:30:00Z",
-            "hari": "Senin"
-        }
+      {
+        "id": "number",
+        "kode_matakuliah": "string",
+        "kelas_id": "number",
+        "kode_dosen": "string",
+        "kode_ruangan": "string",
+        "kode_prodi": "string",
+        "jam_mulai": "datetime",
+        "jam_selesai": "datetime",
+        "hari": "string",
+        "kode_tahun_akademik": "string",
+        "created_at": "datetime",
+        "created_by": "string",
+        "updated_at": "datetime"
+      }
     ]
-}
-```
+  }
+  ```
 
 ### 4. Update Jadwal
-```http
-PUT /jadwal/1
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-    "kode_ruangan": "A-LAB-2",
-    "jam_mulai": "2024-03-18T10:00:00Z",
-    "jam_selesai": "2024-03-18T11:30:00Z",
-    "hari": "Senin"
-}
-```
-
-Response Sukses (200):
-```json
-{
+- **URL**: `/jadwal/:id`
+- **Method**: `PUT`
+- **Deskripsi**: Memperbarui jadwal mata kuliah.
+- **Header**: Memerlukan token JWT (hanya admin prodi atau admin akademik).
+- **Body Permintaan**:
+  ```json
+  {
+    "kode_ruangan": "string",
+    "jam_mulai": "datetime",
+    "jam_selesai": "datetime",
+    "hari": "string"
+  }
+  ```
+- **Respon Sukses (200)**:
+  ```json
+  {
     "message": "Jadwal berhasil diupdate"
-}
-```
+  }
+  ```
 
 ### 5. Hapus Jadwal
-```http
-DELETE /jadwal/1
-Authorization: Bearer <token>
-```
-
-Response Sukses (200):
-```json
-{
+- **URL**: `/jadwal/:id`
+- **Method**: `DELETE`
+- **Deskripsi**: Menghapus jadwal mata kuliah.
+- **Header**: Memerlukan token JWT (hanya admin prodi atau admin akademik).
+- **Respon Sukses (200)**:
+  ```json
+  {
     "message": "Jadwal berhasil dihapus"
-}
-```
+  }
+  ```
 
 ### 6. Cek Ruangan Tersedia
-```http
-POST /jadwal/ruangan-tersedia
-Content-Type: application/json
-
-{
-    "hari": "Senin",
-    "jam_mulai": "2024-03-18T08:00:00Z",
-    "jam_selesai": "2024-03-18T09:30:00Z",
-    "kode_prodi": "TI"
-}
-```
-
-Response Sukses (200):
-```json
-{
+- **URL**: `/jadwal/ruangan-tersedia`
+- **Method**: `POST`
+- **Deskripsi**: Memeriksa ketersediaan ruangan pada waktu tertentu.
+- **Header**: Memerlukan token JWT.
+- **Body Permintaan**:
+  ```json
+  {
+    "hari": "string",
+    "jam_mulai": "datetime",
+    "jam_selesai": "datetime",
+    "kode_prodi": "string"
+  }
+  ```
+- **Respon Sukses (200)**:
+  ```json
+  {
     "data": [
-        {
-            "kode_ruangan": "A-LAB-1",
-            "nama_ruangan": "Laboratorium Komputer 1",
-            "kapasitas": 30,
-            "lokasi": "Lantai 1",
-            "status": "Aktif"
-        }
+      {
+        "kode_ruangan": "string",
+        "nama_ruangan": "string",
+        "kapasitas": "number",
+        "lokasi": "string",
+        "status": "string"
+      }
     ]
-}
-```
+  }
+  ```
 
 ## Manajemen Ruangan
 
 ### 1. Membuat Ruangan Baru
-```http
-POST /ruangan/
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-    "gedung": "A",
-    "tipe": "LAB",
-    "nomor": 1,
-    "nama_ruangan": "Laboratorium Komputer 1",
-    "kode_prodi": "TI",
-    "kapasitas": 30,
-    "lokasi": "Lantai 1"
-}
-```
-
-Response Sukses (200):
-```json
-{
+- **URL**: `/ruangan/`
+- **Method**: `POST`
+- **Deskripsi**: Membuat ruangan baru.
+- **Header**: Memerlukan token JWT (admin prodi atau admin akademik).
+- **Body Permintaan**:
+  ```json
+  {
+    "gedung": "string",
+    "tipe": "string",
+    "nomor": "number",
+    "nama_ruangan": "string",
+    "kode_prodi": "string",
+    "kapasitas": "number",
+    "lokasi": "string"
+  }
+  ```
+- **Respon Sukses (200)**:
+  ```json
+  {
     "message": "Ruangan berhasil dibuat",
     "data": {
-        "kode_ruangan": "A-LAB-1",
-        "nama_ruangan": "Laboratorium Komputer 1",
-        "kode_prodi": "TI",
-        "gedung": "A",
-        "tipe": "LAB",
-        "nomor": 1,
-        "kapasitas": 30,
-        "lokasi": "Lantai 1",
-        "status": "Aktif"
+      "kode_ruangan": "string",
+      "nama_ruangan": "string",
+      "kode_prodi": "string",
+      "gedung": "string",
+      "tipe": "string",
+      "nomor": "number",
+      "kapasitas": "number",
+      "lokasi": "string",
+      "status": "string",
+      "created_at": "datetime",
+      "updated_at": "datetime"
     }
-}
-```
+  }
+  ```
 
 ### 2. Melihat Ruangan per Gedung
-```http
-GET /ruangan/gedung/A
-```
-
-Response Sukses (200):
-```json
-{
+- **URL**: `/ruangan/gedung/:gedung`
+- **Method**: `GET`
+- **Deskripsi**: Mendapatkan daftar semua ruangan di gedung tertentu.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
+  ```json
+  {
     "data": [
-        {
-            "kode_ruangan": "A-LAB-1",
-            "nama_ruangan": "Laboratorium Komputer 1",
-            "kode_prodi": "TI",
-            "gedung": "A",
-            "tipe": "LAB",
-            "nomor": 1,
-            "kapasitas": 30,
-            "lokasi": "Lantai 1",
-            "status": "Aktif"
-        }
+      {
+        "kode_ruangan": "string",
+        "nama_ruangan": "string",
+        "kode_prodi": "string",
+        "gedung": "string",
+        "tipe": "string",
+        "nomor": "number",
+        "kapasitas": "number",
+        "lokasi": "string",
+        "status": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
     ]
-}
-```
+  }
+  ```
 
 ### 3. Melihat Ruangan per Prodi
-```http
-GET /ruangan/prodi/TI
-```
-
-Response Sukses (200):
-```json
-{
+- **URL**: `/ruangan/prodi/:kode_prodi`
+- **Method**: `GET`
+- **Deskripsi**: Mendapatkan daftar semua ruangan untuk program studi tertentu.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
+  ```json
+  {
     "data": [
-        {
-            "kode_ruangan": "A-LAB-1",
-            "nama_ruangan": "Laboratorium Komputer 1",
-            "kode_prodi": "TI",
-            "gedung": "A",
-            "tipe": "LAB",
-            "nomor": 1,
-            "kapasitas": 30,
-            "lokasi": "Lantai 1",
-            "status": "Aktif"
-        }
+      {
+        "kode_ruangan": "string",
+        "nama_ruangan": "string",
+        "kode_prodi": "string",
+        "gedung": "string",
+        "tipe": "string",
+        "nomor": "number",
+        "kapasitas": "number",
+        "lokasi": "string",
+        "status": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
     ]
-}
-```
+  }
+  ```
 
 ### 4. Melihat Ruangan per Tipe
-```http
-GET /ruangan/tipe/LAB
-```
-
-Response Sukses (200):
-```json
-{
+- **URL**: `/ruangan/tipe/:tipe`
+- **Method**: `GET`
+- **Deskripsi**: Mendapatkan daftar ruangan berdasarkan tipe (LAB, KLS, STU).
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
+  ```json
+  {
     "data": [
-        {
-            "kode_ruangan": "A-LAB-1",
-            "nama_ruangan": "Laboratorium Komputer 1",
-            "kode_prodi": "TI",
-            "gedung": "A",
-            "tipe": "LAB",
-            "nomor": 1,
-            "kapasitas": 30,
-            "lokasi": "Lantai 1",
-            "status": "Aktif"
-        }
+      {
+        "kode_ruangan": "string",
+        "nama_ruangan": "string",
+        "kode_prodi": "string",
+        "gedung": "string",
+        "tipe": "string",
+        "nomor": "number",
+        "kapasitas": "number",
+        "lokasi": "string",
+        "status": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
     ]
-}
-```
+  }
+  ```
 
 ### 5. Update Ruangan
-```http
-PUT /ruangan/A-LAB-1
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-    "nama_ruangan": "Laboratorium Komputer 1",
-    "kapasitas": 35,
-    "lokasi": "Lantai 1",
-    "status": "Aktif"
-}
-```
-
-Response Sukses (200):
-```json
-{
+- **URL**: `/ruangan/:kode_ruangan`
+- **Method**: `PUT`
+- **Deskripsi**: Memperbarui informasi ruangan.
+- **Header**: Memerlukan token JWT (admin prodi atau admin akademik).
+- **Body Permintaan**:
+  ```json
+  {
+    "nama_ruangan": "string",
+    "kapasitas": "number",
+    "lokasi": "string",
+    "status": "string"
+  }
+  ```
+- **Respon Sukses (200)**:
+  ```json
+  {
     "message": "Ruangan berhasil diupdate"
-}
-```
+  }
+  ```
 
 ### 6. Hapus Ruangan
-```http
-DELETE /ruangan/A-LAB-1
-Authorization: Bearer <token>
-```
-
-Response Sukses (200):
-```json
-{
+- **URL**: `/ruangan/:kode_ruangan`
+- **Method**: `DELETE`
+- **Deskripsi**: Menghapus ruangan. Ruangan tidak dapat dihapus jika masih digunakan dalam jadwal.
+- **Header**: Memerlukan token JWT (admin prodi atau admin akademik).
+- **Respon Sukses (200)**:
+  ```json
+  {
     "message": "Ruangan berhasil dihapus"
-}
-```
+  }
+  ```
 
 ### 7. Cek Status Ruangan
-```http
-GET /ruangan/status/A-LAB-1?hari=Senin
-```
-
-Response Sukses (200):
-```json
-{
+- **URL**: `/ruangan/status/:kode_ruangan?hari={string}`
+- **Method**: `GET`
+- **Deskripsi**: Mendapatkan status ruangan dan jadwalnya untuk hari tertentu (opsional).
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
+  ```json
+  {
     "ruangan": {
-        "kode_ruangan": "A-LAB-1",
-        "nama_ruangan": "Laboratorium Komputer 1",
-        "kode_prodi": "TI",
-        "gedung": "A",
-        "tipe": "LAB",
-        "nomor": 1,
-        "kapasitas": 30,
-        "lokasi": "Lantai 1",
-        "status": "Aktif"
+      "kode_ruangan": "string",
+      "nama_ruangan": "string",
+      "kode_prodi": "string",
+      "gedung": "string",
+      "tipe": "string",
+      "nomor": "number",
+      "kapasitas": "number",
+      "lokasi": "string",
+      "status": "string"
     },
     "jadwal": [
-        {
-            "id": 1,
-            "kode_matakuliah": "TI101",
-            "kelas_id": 1,
-            "kode_dosen": "DSN001",
-            "jam_mulai": "2024-03-18T08:00:00Z",
-            "jam_selesai": "2024-03-18T09:30:00Z",
-            "hari": "Senin"
-        }
+      {
+        "id": "number",
+        "kode_matakuliah": "string",
+        "kelas_id": "number",
+        "kode_dosen": "string",
+        "jam_mulai": "datetime",
+        "jam_selesai": "datetime",
+        "hari": "string"
+      }
     ]
-}
-```
+  }
+  ```
 
 ## Absensi
 
 ### 1. Buka Pertemuan
-```http
-POST /buka-pertemuan
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-    "kode_matakuliah": "TI101",
-    "kelas_id": 1,
-    "pertemuan_ke": 1,
-    "tanggal": "2024-03-18",
-    "jam_mulai": "2024-03-18T08:00:00Z",
-    "jam_selesai": "2024-03-18T09:30:00Z",
-    "kode_ruangan": "A-LAB-1"
-}
-```
-
-Response Sukses (200):
-```json
-{
+- **URL**: `/buka-pertemuan`
+- **Method**: `POST`
+- **Deskripsi**: Membuka pertemuan baru untuk absensi.
+- **Header**: Memerlukan token JWT (hanya dosen).
+- **Body Permintaan**:
+  ```json
+  {
+    "kode_matakuliah": "string",
+    "pertemuan_ke": "number",
+    "durasi": "number" // durasi dalam menit
+  }
+  ```
+- **Respon Sukses (200)**:
+  ```json
+  {
     "message": "Pertemuan berhasil dibuka",
     "data": {
-        "kode_pertemuan": "PTM20240318001",
-        "kode_matakuliah": "TI101",
-        "kelas_id": 1,
-        "pertemuan_ke": 1,
-        "tanggal": "2024-03-18",
-        "jam_mulai": "2024-03-18T08:00:00Z",
-        "jam_selesai": "2024-03-18T09:30:00Z",
-        "kode_ruangan": "A-LAB-1",
-        "status": "Aktif",
-        "created_by": "DSN001"
+      "kode_pertemuan": "string",
+      "waktu_dibuka": "datetime",
+      "waktu_ditutup": "datetime"
     }
-}
-```
+  }
+  ```
 
 ### 2. Tutup Pertemuan
-```http
-POST /tutup-pertemuan/PTM20240318001
-Authorization: Bearer <token>
-```
-
-Response Sukses (200):
-```json
-{
-    "message": "Pertemuan berhasil ditutup",
-    "data": {
-        "kode_pertemuan": "PTM20240318001",
-        "status": "Selesai",
-        "jumlah_hadir": 25,
-        "jumlah_tidak_hadir": 5
-    }
-}
-```
+- **URL**: `/tutup-pertemuan/:kode_pertemuan`
+- **Method**: `POST`
+- **Deskripsi**: Menutup pertemuan yang sedang aktif.
+- **Header**: Memerlukan token JWT (hanya dosen).
+- **Respon Sukses (200)**:
+  ```json
+  {
+    "message": "Pertemuan berhasil ditutup"
+  }
+  ```
 
 ### 3. Absen
-```http
-POST /absen
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-    "kode_pertemuan": "PTM20240318001",
-    "nim": "2021001",
-    "status": "Hadir",
-    "keterangan": "Hadir tepat waktu"
-}
-```
-
-Response Sukses (200):
-```json
-{
-    "message": "Absensi berhasil dicatat",
-    "data": {
-        "id": 1,
-        "kode_pertemuan": "PTM20240318001",
-        "nim": "2021001",
-        "status": "Hadir",
-        "keterangan": "Hadir tepat waktu",
-        "waktu_absen": "2024-03-18T08:05:00Z"
-    }
-}
-```
+- **URL**: `/absen`
+- **Method**: `POST`
+- **Deskripsi**: Melakukan absensi untuk pertemuan yang sedang aktif.
+- **Header**: Memerlukan token JWT (hanya mahasiswa).
+- **Body Permintaan**:
+  ```json
+  {
+    "kode_pertemuan": "string"
+  }
+  ```
+- **Respon Sukses (200)**:
+  ```json
+  {
+    "message": "Absensi berhasil"
+  }
+  ```
 
 ### 4. Cek Status Pertemuan
-```http
-GET /status-pertemuan/TI101
-Authorization: Bearer <token>
-```
-
-Response Sukses (200):
-```json
-{
-    "data": {
-        "kode_pertemuan": "PTM20240318001",
-        "kode_matakuliah": "TI101",
-        "kelas_id": 1,
-        "pertemuan_ke": 1,
-        "tanggal": "2024-03-18",
-        "jam_mulai": "2024-03-18T08:00:00Z",
-        "jam_selesai": "2024-03-18T09:30:00Z",
-        "kode_ruangan": "A-LAB-1",
-        "status": "Aktif",
-        "jumlah_hadir": 25,
-        "jumlah_tidak_hadir": 5,
-        "created_by": "DSN001"
-    }
-}
-```
+- **URL**: `/status-pertemuan/:kode_matakuliah`
+- **Method**: `GET`
+- **Deskripsi**: Mendapatkan status pertemuan terakhir untuk mata kuliah tertentu.
+- **Header**: Tidak memerlukan token JWT (digunakan untuk publik).
+- **Respon Sukses (200)**:
+  ```json
+  {
+    "status": "string", // "dibuka" atau "belum_dibuka"
+    "pertemuan_ke": "number",
+    "kode_pertemuan": "string",
+    "sisa_waktu": "number", // detik
+    "waktu_dibuka": "datetime",
+    "waktu_ditutup": "datetime"
+  }
+  ```
 
 ### 5. Rekap Absensi
-```http
-GET /rekap-absensi/TI101
-Authorization: Bearer <token>
-```
-
-Response Sukses (200):
-```json
-{
-    "data": {
-        "kode_matakuliah": "TI101",
-        "nama_matakuliah": "Pemrograman Dasar",
-        "kelas_id": 1,
-        "nama_kelas": "TI-1A",
-        "dosen": "Dr. John Doe",
-        "total_pertemuan": 14,
-        "rekap_mahasiswa": [
-            {
-                "nim": "2021001",
-                "nama": "Jane Doe",
-                "total_hadir": 12,
-                "total_tidak_hadir": 2,
-                "persentase_kehadiran": 85.71,
-                "detail_pertemuan": [
-                    {
-                        "pertemuan_ke": 1,
-                        "tanggal": "2024-03-18",
-                        "status": "Hadir",
-                        "keterangan": "Hadir tepat waktu"
-                    }
-                ]
-            }
+- **URL**: `/rekap-absensi/:kode_matakuliah`
+- **Method**: `GET`
+- **Deskripsi**: Mendapatkan rekap absensi untuk mata kuliah tertentu.
+- **Header**: Memerlukan token JWT (hanya dosen).
+- **Respon Sukses (200)**:
+  ```json
+  {
+    "rekap_absensi": [
+      {
+        "nim": "string",
+        "nama_mahasiswa": "string",
+        "total_hadir": "number",
+        "total_pertemuan": "number",
+        "persentase_kehadiran": "number",
+        "detail_absensi": [
+          {
+            "kode_pertemuan": "string",
+            "pertemuan_ke": "number",
+            "waktu_absen": "datetime",
+            "status": "string" // "Hadir" atau "Tidak Hadir"
+          }
         ]
-    }
-}
-```
-
-### Catatan Penting Absensi
-
-1. **Status Pertemuan**:
-   - Aktif: Pertemuan sedang berlangsung
-   - Selesai: Pertemuan telah ditutup
-   - Batal: Pertemuan dibatalkan
-
-2. **Status Kehadiran**:
-   - Hadir: Mahasiswa hadir dalam pertemuan
-   - Tidak Hadir: Mahasiswa tidak hadir
-   - Izin: Mahasiswa hadir dengan izin
-   - Sakit: Mahasiswa tidak hadir karena sakit
-
-3. **Validasi**:
-   - Hanya dosen pengajar yang dapat membuka/menutup pertemuan
-   - Absensi hanya dapat dilakukan saat pertemuan aktif
-   - Mahasiswa hanya dapat absen untuk kelas yang diikutinya
-   - Tidak dapat membuka pertemuan baru jika ada pertemuan yang masih aktif
-   - Waktu absen tidak boleh melebihi jam selesai pertemuan
-
-4. **Format Kode Pertemuan**:
-   - Format: `PTM<YYYYMMDD><XXX>`
-   - Contoh: PTM20240318001 (Pertemuan tanggal 18 Maret 2024, nomor urut 001)
-
-5. **Rekap Absensi**:
-   - Menampilkan statistik kehadiran per mahasiswa
-   - Menghitung persentase kehadiran
-   - Menampilkan detail kehadiran per pertemuan
-   - Dapat diakses oleh dosen dan admin prodi
+      }
+    ]
+  }
+  ```
 
 ## Penilaian
 
-### 1. Input Nilai
-```http
-POST /penilaian/
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-    "kode_matakuliah": "TI101",
-    "kelas_id": 1,
-    "nim": "2021001",
-    "tugas": 85,
-    "uts": 80,
-    "uas": 90,
-    "keterangan": "Nilai tugas sudah termasuk bonus"
-}
-```
-
-Response Sukses (200):
-```json
-{
+### 1. Membuat Penilaian Baru
+- **URL**: `/penilaian/`
+- **Method**: `POST`
+- **Deskripsi**: Membuat entri nilai baru.
+- **Header**: Memerlukan token JWT (hanya dosen atau admin prodi).
+- **Body Permintaan**:
+  ```json
+  {
+    "kode_matakuliah": "string",
+    "kelas_id": "number",
+    "nim": "string",
+    "tugas": "number",
+    "uts": "number",
+    "uas": "number",
+    "keterangan": "string"
+  }
+  ```
+- **Respon Sukses (200)**:
+  ```json
+  {
     "message": "Penilaian berhasil disimpan",
     "data": {
-        "id": 1,
-        "kode_matakuliah": "TI101",
-        "kelas_id": 1,
-        "nim": "2021001",
-        "tugas": 85,
-        "uts": 80,
-        "uas": 90,
-        "nilai_akhir": 85.5,
-        "grade": "A",
-        "keterangan": "Nilai tugas sudah termasuk bonus",
-        "created_at": "2024-03-18T08:00:00Z",
-        "created_by": "DSN001"
+      "id": "number",
+      "kode_matakuliah": "string",
+      "kelas_id": "number",
+      "nim": "string",
+      "tugas": "number",
+      "uts": "number",
+      "uas": "number",
+      "nilai_akhir": "number",
+      "grade": "string",
+      "keterangan": "string",
+      "created_at": "datetime",
+      "created_by": "string"
     }
-}
-```
+  }
+  ```
 
-### 2. Lihat Nilai per Kelas
-```http
-GET /penilaian/kelas/TI101/1
-```
-
-Response Sukses (200):
-```json
-{
+### 2. Melihat Penilaian per Kelas
+- **URL**: `/penilaian/kelas/:kode_matakuliah/:kelas_id`
+- **Method**: `GET`
+- **Deskripsi**: Mendapatkan semua nilai untuk kelas tertentu.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
+  ```json
+  {
     "data": [
-        {
-            "id": 1,
-            "kode_matakuliah": "TI101",
-            "kelas_id": 1,
-            "nim": "2021001",
-            "tugas": 85,
-            "uts": 80,
-            "uas": 90,
-            "nilai_akhir": 85.5,
-            "grade": "A",
-            "keterangan": "Nilai tugas sudah termasuk bonus",
-            "created_at": "2024-03-18T08:00:00Z",
-            "created_by": "DSN001"
-        }
+      {
+        "id": "number",
+        "kode_matakuliah": "string",
+        "kelas_id": "number",
+        "nim": "string",
+        "tugas": "number",
+        "uts": "number",
+        "uas": "number",
+        "nilai_akhir": "number",
+        "grade": "string",
+        "keterangan": "string",
+        "created_at": "datetime",
+        "created_by": "string",
+        "updated_at": "datetime"
+      }
     ]
-}
-```
+  }
+  ```
 
-### 3. Lihat Nilai per Mahasiswa
-```http
-GET /penilaian/mahasiswa/2021001
-```
-
-Response Sukses (200):
-```json
-{
+### 3. Melihat Penilaian per Mahasiswa
+- **URL**: `/penilaian/mahasiswa/:nim`
+- **Method**: `GET`
+- **Deskripsi**: Mendapatkan semua nilai untuk mahasiswa tertentu.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
+  ```json
+  {
     "data": [
-        {
-            "id": 1,
-            "kode_matakuliah": "TI101",
-            "kelas_id": 1,
-            "nim": "2021001",
-            "tugas": 85,
-            "uts": 80,
-            "uas": 90,
-            "nilai_akhir": 85.5,
-            "grade": "A",
-            "keterangan": "Nilai tugas sudah termasuk bonus",
-            "created_at": "2024-03-18T08:00:00Z",
-            "created_by": "DSN001"
-        }
+      {
+        "id": "number",
+        "kode_matakuliah": "string",
+        "kelas_id": "number",
+        "nim": "string",
+        "tugas": "number",
+        "uts": "number",
+        "uas": "number",
+        "nilai_akhir": "number",
+        "grade": "string",
+        "keterangan": "string",
+        "created_at": "datetime",
+        "created_by": "string",
+        "updated_at": "datetime"
+      }
     ]
-}
-```
+  }
+  ```
 
-### 4. Update Nilai
-```http
-PUT /penilaian/1
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-    "tugas": 90,
-    "uts": 85,
-    "uas": 95,
-    "keterangan": "Nilai tugas sudah termasuk bonus dan revisi"
-}
-```
-
-Response Sukses (200):
-```json
-{
+### 4. Update Penilaian
+- **URL**: `/penilaian/:id`
+- **Method**: `PUT`
+- **Deskripsi**: Memperbarui entri nilai.
+- **Header**: Memerlukan token JWT (hanya dosen atau admin prodi).
+- **Body Permintaan**:
+  ```json
+  {
+    "tugas": "number",
+    "uts": "number",
+    "uas": "number",
+    "keterangan": "string"
+  }
+  ```
+- **Respon Sukses (200)**:
+  ```json
+  {
     "message": "Penilaian berhasil diupdate"
-}
-```
+  }
+  ```
 
 ### 5. Rekap Nilai
-```http
-GET /penilaian/rekap/TI101/1
-```
-
-Response Sukses (200):
-```json
-{
+- **URL**: `/penilaian/rekap/:kode_matakuliah/:kelas_id`
+- **Method**: `GET`
+- **Deskripsi**: Mendapatkan rekap nilai dan distribusi nilai untuk mata kuliah dan kelas tertentu.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
+  ```json
+  {
     "data": {
-        "kode_matakuliah": "TI101",
-        "nama_matakuliah": "Pemrograman Dasar",
-        "kelas_id": 1,
-        "nama_kelas": "TI-1A",
-        "total_mahasiswa": 30,
-        "rata_rata": 78.5,
-        "distribusi": {
-            "A": 5,
-            "A-": 3,
-            "B+": 7,
-            "B": 8,
-            "B-": 4,
-            "C+": 2,
-            "C": 1
-        },
-        "detail_nilai": [
-            {
-                "id": 1,
-                "kode_matakuliah": "TI101",
-                "kelas_id": 1,
-                "nim": "2021001",
-                "tugas": 85,
-                "uts": 80,
-                "uas": 90,
-                "nilai_akhir": 85.5,
-                "grade": "A",
-                "keterangan": "Nilai tugas sudah termasuk bonus"
-            }
-        ]
+      "kode_matakuliah": "string",
+      "nama_matakuliah": "string",
+      "kelas_id": "number",
+      "nama_kelas": "string",
+      "total_mahasiswa": "number",
+      "rata_rata": "number",
+      "distribusi": {
+        "A": "number",
+        "A-": "number",
+        "B+": "number",
+        "B": "number",
+        "B-": "number",
+        "C+": "number",
+        "C": "number",
+        "C-": "number",
+        "D": "number",
+        "E": "number"
+      },
+      "detail_nilai": [
+        {
+          "id": "number",
+          "kode_matakuliah": "string",
+          "kelas_id": "number",
+          "nim": "string",
+          "tugas": "number",
+          "uts": "number",
+          "uas": "number",
+          "nilai_akhir": "number",
+          "grade": "string",
+          "keterangan": "string"
+        }
+      ]
     }
-}
-```
+  }
+  ```
 
-### Catatan Penting Penilaian
+## Mahasiswa
 
-1. **Komponen Nilai**:
-   - Tugas: 30% dari nilai akhir
-   - UTS: 30% dari nilai akhir
-   - UAS: 40% dari nilai akhir
+### 1. Dapatkan IPK Mahasiswa
+- **URL**: `/mahasiswa/ipk/:nim`
+- **Method**: `GET`
+- **Deskripsi**: Mendapatkan IPK (Indeks Prestasi Kumulatif) mahasiswa.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
+  ```json
+  {
+    "message": "IPK berhasil diambil",
+    "data": {
+      "nim": "string",
+      "nama": "string",
+      "ipk": "number"
+    }
+  }
+  ```
 
-2. **Skala Nilai**:
-   - A: ≥ 85
-   - A-: ≥ 80
-   - B+: ≥ 75
-   - B: ≥ 70
-   - B-: ≥ 65
-   - C+: ≥ 60
-   - C: ≥ 55
-   - C-: ≥ 50
-   - D: ≥ 40
-   - E: < 40
-
-3. **Validasi**:
-   - Hanya dosen pengajar yang dapat input/update nilai
-   - Admin prodi dapat melihat semua nilai
-   - Mahasiswa hanya dapat melihat nilai mereka sendiri
-   - Nilai harus antara 0-100
-   - Mahasiswa harus terdaftar di kelas yang bersangkutan
-
-4. **Rekap Nilai**:
-   - Menampilkan statistik nilai per kelas
-   - Menghitung rata-rata kelas
-   - Menampilkan distribusi nilai
-   - Menampilkan detail nilai per mahasiswa
-
-## Respon Error
-
-API menggunakan kode status HTTP standar:
-
-- `200 OK`: Permintaan berhasil
-- `400 Bad Request`: Format permintaan tidak valid
-- `401 Unauthorized`: Autentikasi diperlukan atau gagal
-- `403 Forbidden`: Tidak memiliki izin yang cukup
-- `404 Not Found`: Sumber daya tidak ditemukan
-- `409 Conflict`: Sumber daya sudah ada
-- `500 Internal Server Error`: Kesalahan server
-
-Respon error mengikuti format berikut:
-```json
-{
-  "error": "Deskripsi pesan error"
-}
-```
-
-## Keamanan
-
-- Semua endpoint sensitif memerlukan autentikasi JWT
-- Password di-hash menggunakan bcrypt
-- Token JWT ditandatangani menggunakan algoritma HS256
-- Variabel lingkungan `simpadu_jwt_key` digunakan untuk penandatanganan JWT (disarankan 32+ bytes)
-- Token JWT memiliki masa berlaku 1 jam
-
-## Catatan Tambahan
-
-### Format Data
-- Semua tanggal menggunakan format ISO 8601
-- Semester hanya menerima nilai "Ganjil" atau "Genap"
-- Status hanya menerima nilai "Aktif" atau "Tidak Aktif"
-
-### Validasi
-- Username dan email harus unik
-- Password minimal 6 karakter
-- NIM harus terdaftar di sistem
-- Tanggal mulai tidak boleh lebih besar dari tanggal selesai
-- Kode mata kuliah harus unik
-- SKS harus berupa angka positif
-- Semester mata kuliah harus antara 1-8 
-
-### Catatan Penting
-
-1. Format waktu menggunakan ISO 8601 (UTC)
-2. Format kode ruangan: `GEDUNG-TIPE-NOMOR` (contoh: A-LAB-1, B-KLS-2)
-3. Tipe ruangan yang tersedia: LAB (Laboratorium), KLS (Kelas), STU (Studio)
-4. Status ruangan: Aktif, Maintenance, Tidak Aktif
-5. Validasi jadwal:
-   - Jam mulai harus sebelum jam selesai
-   - Tidak boleh bentrok dengan jadwal lain di ruangan yang sama
-   - Dosen tidak boleh memiliki jadwal yang bentrok
-   - Kelas tidak boleh memiliki jadwal yang bentrok
-6. Ruangan tidak dapat dihapus jika masih digunakan dalam jadwal 
+### 2. Dapatkan IPS Mahasiswa
+- **URL**: `/mahasiswa/ips/:nim/:tahun_akademik`
+- **Method**: `GET`
+- **Deskripsi**: Mendapatkan IPS (Indeks Prestasi Semester) mahasiswa untuk tahun akademik tertentu.
+- **Header**: Memerlukan token JWT.
+- **Respon Sukses (200)**:
+  ```json
+  {
+    "message": "IPS berhasil diambil",
+    "data": {
+      "nim": "string",
+      "nama": "string",
+      "tahun_akademik": "string",
+      "ips": "number"
+    }
+  }
+  ```

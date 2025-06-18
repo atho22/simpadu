@@ -1,0 +1,13 @@
+[0;1;31mx[0m nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/lib/systemd/system/nginx.service; enabled; vendor preset: enabled)
+     Active: [0;1;31mfailed[0m (Result: exit-code) since Sun 2025-06-15 12:25:29 UTC; 24min ago
+       Docs: man:nginx(8)
+        CPU: 11ms
+
+Jun 15 12:25:29 Ti05-4C-01 systemd[1]: Starting A high performance web server and a reverse proxy server...
+Jun 15 12:25:29 Ti05-4C-01 nginx[6235]: nginx: [emerg] cannot load certificate "/etc/letsencrypt/live/ti054c01.agussbn.my.id/fullchain.pem": BIO_new_file() failed (SSL: error:80000002:system library::No such file or directory:calling fopen(/etc/letsencrypt/live/ti054c01.agussbn.my.id/fullchain.pem, r) error:10000080:BIO routines::no such file)
+Jun 15 12:25:29 Ti05-4C-01 nginx[6235]: nginx: configuration file /etc/nginx/nginx.conf test failed
+Jun 15 12:25:29 Ti05-4C-01 systemd[1]: [0;1;39m[0;1;31m[0;1;39mnginx.service: Control process exited, code=exited, status=1/FAILURE[0m
+Jun 15 12:25:29 Ti05-4C-01 systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185mnginx.service: Failed with result 'exit-code'.[0m
+Jun 15 12:25:29 Ti05-4C-01 systemd[1]: [0;1;31m[0;1;39m[0;1;31mFailed to start A high performance web server and a reverse proxy server.[0m
+Jun 15 12:43:03 Ti05-4C-01 systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185mnginx.service: Unit cannot be reloaded because it is inactive.[0m

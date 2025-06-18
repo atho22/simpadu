@@ -5,6 +5,7 @@ import (
 	"simpadu/structs"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -71,20 +72,27 @@ func SeedUsers(db *gorm.DB) error {
 	if err := db.Exec("TRUNCATE TABLE users").Error; err != nil {
 		return err
 	}
+
+	// Hash password once since it's the same for all users
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %v", err)
+	}
+
 	users := []structs.Users{
 		{
 			User_id:  "USR001",
 			Username: "admin_sistem",
 			Email:    "admin@university.ac.id",
-			Password: "$2a$10$hashedpassword1", // bcrypt hash
-			Role:     "admin_sistem",
+			Password: string(hashedPassword),
+			Role:     "admin_akademik",
 			Status:   "Aktif",
 		},
 		{
 			User_id:  "USR002",
 			Username: "admin_prodi_ti",
 			Email:    "admin.ti@university.ac.id",
-			Password: "$2a$10$hashedpassword2",
+			Password: string(hashedPassword),
 			Role:     "admin_prodi",
 			Status:   "Aktif",
 		},
@@ -92,7 +100,7 @@ func SeedUsers(db *gorm.DB) error {
 			User_id:  "DSN001",
 			Username: "dosen_1",
 			Email:    "dosen1@university.ac.id",
-			Password: "$2a$10$hashedpassword3",
+			Password: string(hashedPassword),
 			Role:     "dosen",
 			Status:   "Aktif",
 		},
@@ -100,7 +108,7 @@ func SeedUsers(db *gorm.DB) error {
 			User_id:  "MHS001",
 			Username: "mahasiswa_1",
 			Email:    "mahasiswa1@student.university.ac.id",
-			Password: "$2a$10$hashedpassword4",
+			Password: string(hashedPassword),
 			Role:     "mahasiswa",
 			Status:   "Aktif",
 		},
@@ -108,7 +116,7 @@ func SeedUsers(db *gorm.DB) error {
 			User_id:  "STF001",
 			Username: "staff_akademik",
 			Email:    "staff@university.ac.id",
-			Password: "$2a$10$hashedpassword5",
+			Password: string(hashedPassword),
 			Role:     "staff_akademik",
 			Status:   "Aktif",
 		},

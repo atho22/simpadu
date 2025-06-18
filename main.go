@@ -15,6 +15,7 @@ import (
 	"simpadu/penilaian"
 	"simpadu/prodi"
 	"simpadu/ruangan"
+	"simpadu/seeders"
 	"simpadu/structs"
 	"strings"
 	"time"
@@ -69,7 +70,7 @@ func main() {
 	log.Println("Database migration completed successfully")
 
 	// Replace individual seed calls with SeedAll
-
+	seeders.SeedAll(DB)
 	// Set Gin to release mode in production
 	if os.Getenv("GIN_MODE") == "release" {
 		gin.SetMode(gin.ReleaseMode)
@@ -115,6 +116,14 @@ func main() {
 		jadwalRoutes.PUT("/:id", AuthMiddleware(), jadwalHandler.UpdateJadwal)
 		jadwalRoutes.DELETE("/:id", AuthMiddleware(), jadwalHandler.DeleteJadwal)
 		jadwalRoutes.POST("/ruangan-tersedia", AuthMiddleware(), jadwalHandler.GetRuanganTersedia)
+	}
+
+	matakuliahHandler := prodi.InDB{DB: DB}
+	matakuliahRoutes := r.Group("/matakuliah")
+	{
+		matakuliahRoutes.POST("/", AuthMiddleware(), matakuliahHandler.CreateMatakuliah)
+		matakuliahRoutes.GET("/", AuthMiddleware(), matakuliahHandler.GetAllMatakuliah)
+		matakuliahRoutes.GET("/:kode_matakuliah", AuthMiddleware(), matakuliahHandler.DetailMatakuliah)
 	}
 
 	// Penilaian routes
@@ -171,699 +180,699 @@ func main() {
 
 		// Elegant and professional HTML template
 		htmlPage := `<!DOCTYPE html>
-	<html lang="en">
-	<head>
-	  <meta charset="UTF-8" />
-	  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	  <title>API Documentation - Kelompok 1</title>
-	  <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/48/api-settings.png">
-	  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-	  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
-	  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-	  <style>
-		:root {
-		  --primary-color: #6366f1;
-		  --primary-dark: #4f46e5;
-		  --secondary-color: #f8fafc;
-		  --accent-color: #0ea5e9;
-		  --text-primary: #1e293b;
-		  --text-secondary: #64748b;
-		  --border-color: #e2e8f0;
-		  --success-color: #10b981;
-		  --warning-color: #f59e0b;
-		  --error-color: #ef4444;
-		  --code-bg: #1e293b;
-		  --sidebar-width: 280px;
-		  --header-height: 80px;
-		}
-	
-		* {
-		  margin: 0;
-		  padding: 0;
-		  box-sizing: border-box;
-		}
-	
-		body {
-		  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-		  line-height: 1.6;
-		  color: var(--text-primary);
-		  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		  min-height: 100vh;
-		}
-	
-		.container {
-		  display: flex;
-		  min-height: 100vh;
-		}
-	
-		/* Sidebar */
-		.sidebar {
-		  width: var(--sidebar-width);
-		  background: rgba(255, 255, 255, 0.95);
-		  backdrop-filter: blur(10px);
-		  border-right: 1px solid var(--border-color);
-		  position: fixed;
-		  height: 100vh;
-		  overflow-y: auto;
-		  z-index: 1000;
-		  transition: transform 0.3s ease;
-		}
-	
-		.sidebar-header {
-		  padding: 2rem 1.5rem;
-		  border-bottom: 1px solid var(--border-color);
-		  background: var(--primary-color);
-		  color: white;
-		  text-align: center;
-		}
-	
-		.sidebar-header .logo {
-		  width: 48px;
-		  height: 48px;
-		  margin-bottom: 1rem;
-		  filter: brightness(0) invert(1);
-		}
-	
-		.sidebar-header h1 {
-		  font-size: 1.25rem;
-		  font-weight: 600;
-		  margin-bottom: 0.5rem;
-		}
-	
-		.sidebar-header p {
-		  font-size: 0.875rem;
-		  opacity: 0.9;
-		}
-	
-		.nav-menu {
-		  padding: 1.5rem 0;
-		}
-	
-		.nav-item {
-		  padding: 0.75rem 1.5rem;
-		  cursor: pointer;
-		  transition: all 0.2s ease;
-		  border-left: 3px solid transparent;
-		}
-	
-		.nav-item:hover {
-		  background: var(--secondary-color);
-		  border-left-color: var(--primary-color);
-		}
-	
-		.nav-item.active {
-		  background: var(--secondary-color);
-		  border-left-color: var(--primary-color);
-		  color: var(--primary-color);
-		  font-weight: 500;
-		}
-	
-		.nav-item i {
-		  margin-right: 0.75rem;
-		  width: 16px;
-		}
-	
-		/* Main Content */
-		.main-content {
-		  flex: 1;
-		  margin-left: var(--sidebar-width);
-		  background: white;
-		  min-height: 100vh;
-		}
-	
-		.content-header {
-		  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-		  color: white;
-		  padding: 3rem 2rem;
-		  text-align: center;
-		  position: relative;
-		  overflow: hidden;
-		}
-	
-		.content-header::before {
-		  content: '';
-		  position: absolute;
-		  top: 0;
-		  left: 0;
-		  right: 0;
-		  bottom: 0;
-		  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
-		  opacity: 0.1;
-		}
-	
-		.content-header h1 {
-		  font-size: 2.5rem;
-		  font-weight: 700;
-		  margin-bottom: 1rem;
-		  position: relative;
-		  z-index: 1;
-		}
-	
-		.content-header p {
-		  font-size: 1.1rem;
-		  opacity: 0.9;
-		  position: relative;
-		  z-index: 1;
-		}
-	
-		.content-body {
-		  padding: 2rem;
-		}
-	
-		/* Info Cards */
-		.info-grid {
-		  display: grid;
-		  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-		  gap: 1.5rem;
-		  margin-bottom: 3rem;
-		}
-	
-		.info-card {
-		  background: white;
-		  border: 1px solid var(--border-color);
-		  border-radius: 12px;
-		  padding: 1.5rem;
-		  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-		  transition: all 0.3s ease;
-		}
-	
-		.info-card:hover {
-		  transform: translateY(-2px);
-		  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
-		}
-	
-		.info-card-header {
-		  display: flex;
-		  align-items: center;
-		  margin-bottom: 1rem;
-		}
-	
-		.info-card-icon {
-		  width: 40px;
-		  height: 40px;
-		  background: var(--primary-color);
-		  border-radius: 8px;
-		  display: flex;
-		  align-items: center;
-		  justify-content: center;
-		  margin-right: 1rem;
-		}
-	
-		.info-card-icon i {
-		  color: white;
-		  font-size: 1.25rem;
-		}
-	
-		.info-card h3 {
-		  font-size: 1.125rem;
-		  font-weight: 600;
-		  color: var(--text-primary);
-		}
-	
-		.info-list {
-		  list-style: none;
-		}
-	
-		.info-list li {
-		  padding: 0.5rem 0;
-		  border-bottom: 1px solid var(--border-color);
-		  display: flex;
-		  align-items: center;
-		}
-	
-		.info-list li:last-child {
-		  border-bottom: none;
-		}
-	
-		.info-list li i {
-		  margin-right: 0.75rem;
-		  color: var(--success-color);
-		  width: 16px;
-		}
-	
-		/* Documentation Content */
-		.documentation-content {
-		  background: white;
-		  border-radius: 12px;
-		  padding: 2rem;
-		  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-		  margin-top: 2rem;
-		}
-	
-		.documentation-content h1,
-		.documentation-content h2,
-		.documentation-content h3,
-		.documentation-content h4,
-		.documentation-content h5,
-		.documentation-content h6 {
-		  color: var(--text-primary);
-		  margin-top: 2rem;
-		  margin-bottom: 1rem;
-		  padding-bottom: 0.5rem;
-		  border-bottom: 2px solid var(--border-color);
-		}
-	
-		.documentation-content h1 {
-		  font-size: 2rem;
-		  color: var(--primary-color);
-		}
-	
-		.documentation-content h2 {
-		  font-size: 1.5rem;
-		}
-	
-		.documentation-content pre {
-		  background: var(--code-bg);
-		  color: #f8f8f2;
-		  padding: 1.5rem;
-		  border-radius: 8px;
-		  overflow-x: auto;
-		  font-family: 'Fira Code', Consolas, 'Courier New', monospace;
-		  font-size: 0.875rem;
-		  line-height: 1.5;
-		  position: relative;
-		}
-	
-		.documentation-content code {
-		  font-family: 'Fira Code', Consolas, 'Courier New', monospace;
-		  background: #f1f5f9;
-		  padding: 0.25rem 0.5rem;
-		  border-radius: 4px;
-		  font-size: 0.875rem;
-		  color: var(--primary-color);
-		}
-	
-		.documentation-content pre code {
-		  background: transparent;
-		  padding: 0;
-		  color: inherit;
-		}
-	
-		.documentation-content a {
-		  color: var(--accent-color);
-		  text-decoration: none;
-		  font-weight: 500;
-		  transition: color 0.2s ease;
-		}
-	
-		.documentation-content a:hover {
-		  color: var(--primary-color);
-		  text-decoration: underline;
-		}
-	
-		.documentation-content blockquote {
-		  border-left: 4px solid var(--primary-color);
-		  background: var(--secondary-color);
-		  padding: 1rem 1.5rem;
-		  margin: 1.5rem 0;
-		  border-radius: 0 8px 8px 0;
-		}
-	
-		.documentation-content table {
-		  width: 100%;
-		  border-collapse: collapse;
-		  margin: 1.5rem 0;
-		  background: white;
-		  border-radius: 8px;
-		  overflow: hidden;
-		  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-		}
-	
-		.documentation-content th,
-		.documentation-content td {
-		  padding: 1rem;
-		  text-align: left;
-		  border-bottom: 1px solid var(--border-color);
-		}
-	
-		.documentation-content th {
-		  background: var(--secondary-color);
-		  font-weight: 600;
-		  color: var(--text-primary);
-		}
-	
-		.documentation-content tr:hover {
-		  background: var(--secondary-color);
-		}
-	
-		/* Copy Button */
-		.copy-button {
-		  position: absolute;
-		  top: 1rem;
-		  right: 1rem;
-		  background: rgba(255, 255, 255, 0.1);
-		  color: white;
-		  border: 1px solid rgba(255, 255, 255, 0.2);
-		  padding: 0.5rem 1rem;
-		  border-radius: 6px;
-		  cursor: pointer;
-		  font-size: 0.75rem;
-		  font-weight: 500;
-		  transition: all 0.2s ease;
-		  backdrop-filter: blur(4px);
-		}
-	
-		.copy-button:hover {
-		  background: rgba(255, 255, 255, 0.2);
-		  transform: translateY(-1px);
-		}
-	
-		.copy-button.copied {
-		  background: var(--success-color);
-		  border-color: var(--success-color);
-		}
-	
-		/* Status badges */
-		.status-badge {
-		  display: inline-block;
-		  padding: 0.25rem 0.75rem;
-		  border-radius: 20px;
-		  font-size: 0.75rem;
-		  font-weight: 500;
-		  text-transform: uppercase;
-		  letter-spacing: 0.5px;
-		}
-	
-		.status-success {
-		  background: rgba(16, 185, 129, 0.1);
-		  color: var(--success-color);
-		  border: 1px solid var(--success-color);
-		}
-	
-		.status-warning {
-		  background: rgba(245, 158, 11, 0.1);
-		  color: var(--warning-color);
-		  border: 1px solid var(--warning-color);
-		}
-	
-		.status-error {
-		  background: rgba(239, 68, 68, 0.1);
-		  color: var(--error-color);
-		  border: 1px solid var(--error-color);
-		}
-	
-		/* Responsive Design */
-		@media (max-width: 768px) {
-		  .sidebar {
-			transform: translateX(-100%);
-		  }
-	
-		  .sidebar.open {
-			transform: translateX(0);
-		  }
-	
-		  .main-content {
-			margin-left: 0;
-		  }
-	
-		  .content-header h1 {
+		<html lang="en">
+		<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>API Documentation - Kelompok 1</title>
+		<link rel="icon" type="image/png" href="https://img.icons8.com/fluency/48/api-settings.png">
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+		<style>
+			:root {
+			--primary-color: #6366f1;
+			--primary-dark: #4f46e5;
+			--secondary-color: #f8fafc;
+			--accent-color: #0ea5e9;
+			--text-primary: #1e293b;
+			--text-secondary: #64748b;
+			--border-color: #e2e8f0;
+			--success-color: #10b981;
+			--warning-color: #f59e0b;
+			--error-color: #ef4444;
+			--code-bg: #1e293b;
+			--sidebar-width: 280px;
+			--header-height: 80px;
+			}
+		
+			* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+			}
+		
+			body {
+			font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+			line-height: 1.6;
+			color: var(--text-primary);
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			min-height: 100vh;
+			}
+		
+			.container {
+			display: flex;
+			min-height: 100vh;
+			}
+		
+			/* Sidebar */
+			.sidebar {
+			width: var(--sidebar-width);
+			background: rgba(255, 255, 255, 0.95);
+			backdrop-filter: blur(10px);
+			border-right: 1px solid var(--border-color);
+			position: fixed;
+			height: 100vh;
+			overflow-y: auto;
+			z-index: 1000;
+			transition: transform 0.3s ease;
+			}
+		
+			.sidebar-header {
+			padding: 2rem 1.5rem;
+			border-bottom: 1px solid var(--border-color);
+			background: var(--primary-color);
+			color: white;
+			text-align: center;
+			}
+		
+			.sidebar-header .logo {
+			width: 48px;
+			height: 48px;
+			margin-bottom: 1rem;
+			filter: brightness(0) invert(1);
+			}
+		
+			.sidebar-header h1 {
+			font-size: 1.25rem;
+			font-weight: 600;
+			margin-bottom: 0.5rem;
+			}
+		
+			.sidebar-header p {
+			font-size: 0.875rem;
+			opacity: 0.9;
+			}
+		
+			.nav-menu {
+			padding: 1.5rem 0;
+			}
+		
+			.nav-item {
+			padding: 0.75rem 1.5rem;
+			cursor: pointer;
+			transition: all 0.2s ease;
+			border-left: 3px solid transparent;
+			}
+		
+			.nav-item:hover {
+			background: var(--secondary-color);
+			border-left-color: var(--primary-color);
+			}
+		
+			.nav-item.active {
+			background: var(--secondary-color);
+			border-left-color: var(--primary-color);
+			color: var(--primary-color);
+			font-weight: 500;
+			}
+		
+			.nav-item i {
+			margin-right: 0.75rem;
+			width: 16px;
+			}
+		
+			/* Main Content */
+			.main-content {
+			flex: 1;
+			margin-left: var(--sidebar-width);
+			background: white;
+			min-height: 100vh;
+			}
+		
+			.content-header {
+			background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+			color: white;
+			padding: 3rem 2rem;
+			text-align: center;
+			position: relative;
+			overflow: hidden;
+			}
+		
+			.content-header::before {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+			opacity: 0.1;
+			}
+		
+			.content-header h1 {
+			font-size: 2.5rem;
+			font-weight: 700;
+			margin-bottom: 1rem;
+			position: relative;
+			z-index: 1;
+			}
+		
+			.content-header p {
+			font-size: 1.1rem;
+			opacity: 0.9;
+			position: relative;
+			z-index: 1;
+			}
+		
+			.content-body {
+			padding: 2rem;
+			}
+		
+			/* Info Cards */
+			.info-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+			gap: 1.5rem;
+			margin-bottom: 3rem;
+			}
+		
+			.info-card {
+			background: white;
+			border: 1px solid var(--border-color);
+			border-radius: 12px;
+			padding: 1.5rem;
+			box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+			transition: all 0.3s ease;
+			}
+		
+			.info-card:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+			}
+		
+			.info-card-header {
+			display: flex;
+			align-items: center;
+			margin-bottom: 1rem;
+			}
+		
+			.info-card-icon {
+			width: 40px;
+			height: 40px;
+			background: var(--primary-color);
+			border-radius: 8px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			margin-right: 1rem;
+			}
+		
+			.info-card-icon i {
+			color: white;
+			font-size: 1.25rem;
+			}
+		
+			.info-card h3 {
+			font-size: 1.125rem;
+			font-weight: 600;
+			color: var(--text-primary);
+			}
+		
+			.info-list {
+			list-style: none;
+			}
+		
+			.info-list li {
+			padding: 0.5rem 0;
+			border-bottom: 1px solid var(--border-color);
+			display: flex;
+			align-items: center;
+			}
+		
+			.info-list li:last-child {
+			border-bottom: none;
+			}
+		
+			.info-list li i {
+			margin-right: 0.75rem;
+			color: var(--success-color);
+			width: 16px;
+			}
+		
+			/* Documentation Content */
+			.documentation-content {
+			background: white;
+			border-radius: 12px;
+			padding: 2rem;
+			box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+			margin-top: 2rem;
+			}
+		
+			.documentation-content h1,
+			.documentation-content h2,
+			.documentation-content h3,
+			.documentation-content h4,
+			.documentation-content h5,
+			.documentation-content h6 {
+			color: var(--text-primary);
+			margin-top: 2rem;
+			margin-bottom: 1rem;
+			padding-bottom: 0.5rem;
+			border-bottom: 2px solid var(--border-color);
+			}
+		
+			.documentation-content h1 {
 			font-size: 2rem;
-		  }
-	
-		  .content-body {
+			color: var(--primary-color);
+			}
+		
+			.documentation-content h2 {
+			font-size: 1.5rem;
+			}
+		
+			.documentation-content pre {
+			background: var(--code-bg);
+			color: #f8f8f2;
+			padding: 1.5rem;
+			border-radius: 8px;
+			overflow-x: auto;
+			font-family: 'Fira Code', Consolas, 'Courier New', monospace;
+			font-size: 0.875rem;
+			line-height: 1.5;
+			position: relative;
+			}
+		
+			.documentation-content code {
+			font-family: 'Fira Code', Consolas, 'Courier New', monospace;
+			background: #f1f5f9;
+			padding: 0.25rem 0.5rem;
+			border-radius: 4px;
+			font-size: 0.875rem;
+			color: var(--primary-color);
+			}
+		
+			.documentation-content pre code {
+			background: transparent;
+			padding: 0;
+			color: inherit;
+			}
+		
+			.documentation-content a {
+			color: var(--accent-color);
+			text-decoration: none;
+			font-weight: 500;
+			transition: color 0.2s ease;
+			}
+		
+			.documentation-content a:hover {
+			color: var(--primary-color);
+			text-decoration: underline;
+			}
+		
+			.documentation-content blockquote {
+			border-left: 4px solid var(--primary-color);
+			background: var(--secondary-color);
+			padding: 1rem 1.5rem;
+			margin: 1.5rem 0;
+			border-radius: 0 8px 8px 0;
+			}
+		
+			.documentation-content table {
+			width: 100%;
+			border-collapse: collapse;
+			margin: 1.5rem 0;
+			background: white;
+			border-radius: 8px;
+			overflow: hidden;
+			box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+			}
+		
+			.documentation-content th,
+			.documentation-content td {
 			padding: 1rem;
-		  }
-	
-		  .info-grid {
-			grid-template-columns: 1fr;
-		  }
-		}
-	
-		/* Scrollbar Styling */
-		::-webkit-scrollbar {
-		  width: 8px;
-		}
-	
-		::-webkit-scrollbar-track {
-		  background: var(--secondary-color);
-		}
-	
-		::-webkit-scrollbar-thumb {
-		  background: var(--border-color);
-		  border-radius: 4px;
-		}
-	
-		::-webkit-scrollbar-thumb:hover {
-		  background: var(--text-secondary);
-		}
-	
-		/* Loading Animation */
-		.loading {
-		  display: inline-block;
-		  width: 20px;
-		  height: 20px;
-		  border: 3px solid rgba(255, 255, 255, 0.3);
-		  border-radius: 50%;
-		  border-top-color: white;
-		  animation: spin 1s ease-in-out infinite;
-		}
-	
-		@keyframes spin {
-		  to { transform: rotate(360deg); }
-		}
-	  </style>
-	</head>
-	<body>
-	  <div class="container">
-		<!-- Sidebar -->
-		<div class="sidebar" id="sidebar">
-		  <div class="sidebar-header">
-			<img src="https://img.icons8.com/fluency/48/api-settings.png" alt="API Icon" class="logo"/>
-			<h1>API Docs</h1>
-			<p>Kelompok1 System</p>
-		  </div>
-		  <nav class="nav-menu">
-			<div class="nav-item active" onclick="scrollToSection('overview')">
-			  <i class="fas fa-home"></i>
-			  Overview
-			</div>
-			<div class="nav-item" onclick="scrollToSection('authentication')">
-			  <i class="fas fa-lock"></i>
-			  Authentication
-			</div>
-			<div class="nav-item" onclick="scrollToSection('endpoints')">
-			  <i class="fas fa-plug"></i>
-			  Endpoints
-			</div>
-			<div class="nav-item" onclick="scrollToSection('examples')">
-			  <i class="fas fa-code"></i>
-			  Examples
-			</div>
-			<div class="nav-item" onclick="scrollToSection('errors')">
-			  <i class="fas fa-exclamation-triangle"></i>
-			  Error Handling
-			</div>
-		  </nav>
-		</div>
-	
-		<!-- Main Content -->
-		<div class="main-content">
-		  <div class="content-header">
-			<h1>API Documentation</h1>
-			<p>Sistem Kepegawaian - Comprehensive REST API Guide</p>
-		  </div>
-	
-		  <div class="content-body">
-			<!-- Info Cards -->
-			<div class="info-grid">
-			  <div class="info-card">
-				<div class="info-card-header">
-				  <div class="info-card-icon">
-					<i class="fas fa-server"></i>
-				  </div>
-				  <h3>Base Information</h3>
-				</div>
-				<ul class="info-list">
-				  <li>
-					<i class="fas fa-check"></i>
-					<strong>Base URL:</strong> <a href="https://ti054c01.agussbn.my.id" target="_blank">https://ti054c01.agussbn.my.id</a>
-				  </li>
-				  <li>
-					<i class="fas fa-check"></i>
-					<strong>Format:</strong> JSON (form-data untuk upload)
-				  </li>
-				  <li>
-					<i class="fas fa-check"></i>
-					<strong>Version:</strong> v1.0
-				  </li>
-				</ul>
-			  </div>
-	
-			  <div class="info-card">
-				<div class="info-card-header">
-				  <div class="info-card-icon">
-					<i class="fas fa-shield-alt"></i>
-				  </div>
-				  <h3>Authentication</h3>
-				</div>
-				<ul class="info-list">
-				  <li>
-					<i class="fas fa-check"></i>
-					<strong>Type:</strong> JWT Token
-				  </li>
-				  <li>
-					<i class="fas fa-check"></i>
-					<strong>Header:</strong> Authorization
-				  </li>
-				  <li>
-					<i class="fas fa-check"></i>
-					<strong>Role-based:</strong> Access Control
-				  </li>
-				</ul>
-			  </div>
-	
-			  <div class="info-card">
-				<div class="info-card-header">
-				  <div class="info-card-icon">
-					<i class="fas fa-cloud-upload-alt"></i>
-				  </div>
-				  <h3>File Upload</h3>
-				</div>
-				<ul class="info-list">
-				  <li>
-					<i class="fas fa-check"></i>
-					<strong>Available:</strong> Specific endpoints
-				  </li>
-				  <li>
-					<i class="fas fa-check"></i>
-					<strong>Storage:</strong> /uploads folder
-				  </li>
-				  <li>
-					<i class="fas fa-check"></i>
-					<strong>Format:</strong> Multipart form-data
-				  </li>
-				</ul>
-			  </div>
-			</div>
-	
-			<!-- Authentication Status Info -->
-			<div class="info-card">
-			  <div class="info-card-header">
-				<div class="info-card-icon">
-				  <i class="fas fa-info-circle"></i>
-				</div>
-				<h3>Response Codes</h3>
-			  </div>
-			  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem;">
-				<div style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border-left: 4px solid var(--error-color);">
-				  <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-					<span class="status-badge status-error">401</span>
-					<span style="margin-left: 0.5rem; font-weight: 500;">No Token</span>
-				  </div>
-				  <p style="font-size: 0.875rem; color: var(--text-secondary);">Token tidak ditemukan</p>
-				</div>
-				<div style="padding: 1rem; background: rgba(245, 158, 11, 0.1); border-radius: 8px; border-left: 4px solid var(--warning-color);">
-				  <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-					<span class="status-badge status-warning">403</span>
-					<span style="margin-left: 0.5rem; font-weight: 500;">Invalid Token</span>
-				  </div>
-				  <p style="font-size: 0.875rem; color: var(--text-secondary);">Token tidak valid</p>
-				</div>
-				<div style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border-left: 4px solid var(--error-color);">
-				  <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-					<span class="status-badge status-error">Access Denied</span>
-				  </div>
-				  <p style="font-size: 0.875rem; color: var(--text-secondary);">Role tidak memiliki akses</p>
-				  <div style="margin-top: 1rem; background: var(--code-bg); color: white; padding: 1rem; border-radius: 6px; position: relative;">
-					<code>{ "message": "Access Denied!" }</code>
-					<button class="copy-button" onclick="copyToClipboard(this, '{ \"message\": \"Access Denied!\" }')">
-					  <i class="fas fa-copy"></i>
-					</button>
-				  </div>
-				</div>
-			  </div>
-			</div>
-	
-			<!-- Documentation Content -->
-			<div class="documentation-content" id="documentation">
-			  ` + string(parsedHTML) + `
-			</div>
-		  </div>
-		</div>
-	  </div>
-	
-	  <script>
-		// Copy to clipboard functionality
-		function copyToClipboard(button, text) {
-		  const textToCopy = text || button.previousElementSibling.textContent;
-		  navigator.clipboard.writeText(textToCopy).then(() => {
-			const originalContent = button.innerHTML;
-			button.innerHTML = '<i class="fas fa-check"></i>';
-			button.classList.add('copied');
-			setTimeout(() => {
-			  button.innerHTML = originalContent;
-			  button.classList.remove('copied');
-			}, 2000);
-		  }).catch(err => {
-			console.error('Failed to copy: ', err);
-		  });
-		}
-	
-		// Smooth scroll to section
-		function scrollToSection(sectionId) {
-		  const element = document.getElementById(sectionId);
-		  if (element) {
-			element.scrollIntoView({ behavior: 'smooth' });
-		  }
-		  
-		  // Update active nav item
-		  document.querySelectorAll('.nav-item').forEach(item => {
-			item.classList.remove('active');
-		  });
-		  const activeItem = document.querySelector('[onclick="scrollToSection(\'' + sectionId + '\')"]');
-		  if (activeItem) {
-			activeItem.classList.add('active');
-		  }
-		}
-	
-		// Mobile sidebar toggle
-		function toggleSidebar() {
-		  const sidebar = document.getElementById('sidebar');
-		  sidebar.classList.toggle('open');
-		}
-	
-		// Add copy buttons to all pre elements
-		document.addEventListener('DOMContentLoaded', function() {
-		  const preElements = document.querySelectorAll('pre');
-		  preElements.forEach(pre => {
-			if (!pre.querySelector('.copy-button')) {
-			  const button = document.createElement('button');
-			  button.className = 'copy-button';
-			  button.innerHTML = '<i class="fas fa-copy"></i>';
-			  button.onclick = function() {
-				copyToClipboard(this, pre.textContent);
-			  };
-			  pre.appendChild(button);
+			text-align: left;
+			border-bottom: 1px solid var(--border-color);
 			}
-		  });
-		});
-	
-		// Intersection Observer for active navigation
-		const observer = new IntersectionObserver((entries) => {
-		  entries.forEach(entry => {
-			if (entry.isIntersecting) {
-			  const id = entry.target.id;
-			  document.querySelectorAll('.nav-item').forEach(item => {
+		
+			.documentation-content th {
+			background: var(--secondary-color);
+			font-weight: 600;
+			color: var(--text-primary);
+			}
+		
+			.documentation-content tr:hover {
+			background: var(--secondary-color);
+			}
+		
+			/* Copy Button */
+			.copy-button {
+			position: absolute;
+			top: 1rem;
+			right: 1rem;
+			background: rgba(255, 255, 255, 0.1);
+			color: white;
+			border: 1px solid rgba(255, 255, 255, 0.2);
+			padding: 0.5rem 1rem;
+			border-radius: 6px;
+			cursor: pointer;
+			font-size: 0.75rem;
+			font-weight: 500;
+			transition: all 0.2s ease;
+			backdrop-filter: blur(4px);
+			}
+		
+			.copy-button:hover {
+			background: rgba(255, 255, 255, 0.2);
+			transform: translateY(-1px);
+			}
+		
+			.copy-button.copied {
+			background: var(--success-color);
+			border-color: var(--success-color);
+			}
+		
+			/* Status badges */
+			.status-badge {
+			display: inline-block;
+			padding: 0.25rem 0.75rem;
+			border-radius: 20px;
+			font-size: 0.75rem;
+			font-weight: 500;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+			}
+		
+			.status-success {
+			background: rgba(16, 185, 129, 0.1);
+			color: var(--success-color);
+			border: 1px solid var(--success-color);
+			}
+		
+			.status-warning {
+			background: rgba(245, 158, 11, 0.1);
+			color: var(--warning-color);
+			border: 1px solid var(--warning-color);
+			}
+		
+			.status-error {
+			background: rgba(239, 68, 68, 0.1);
+			color: var(--error-color);
+			border: 1px solid var(--error-color);
+			}
+		
+			/* Responsive Design */
+			@media (max-width: 768px) {
+			.sidebar {
+				transform: translateX(-100%);
+			}
+		
+			.sidebar.open {
+				transform: translateX(0);
+			}
+		
+			.main-content {
+				margin-left: 0;
+			}
+		
+			.content-header h1 {
+				font-size: 2rem;
+			}
+		
+			.content-body {
+				padding: 1rem;
+			}
+		
+			.info-grid {
+				grid-template-columns: 1fr;
+			}
+			}
+		
+			/* Scrollbar Styling */
+			::-webkit-scrollbar {
+			width: 8px;
+			}
+		
+			::-webkit-scrollbar-track {
+			background: var(--secondary-color);
+			}
+		
+			::-webkit-scrollbar-thumb {
+			background: var(--border-color);
+			border-radius: 4px;
+			}
+		
+			::-webkit-scrollbar-thumb:hover {
+			background: var(--text-secondary);
+			}
+		
+			/* Loading Animation */
+			.loading {
+			display: inline-block;
+			width: 20px;
+			height: 20px;
+			border: 3px solid rgba(255, 255, 255, 0.3);
+			border-radius: 50%;
+			border-top-color: white;
+			animation: spin 1s ease-in-out infinite;
+			}
+		
+			@keyframes spin {
+			to { transform: rotate(360deg); }
+			}
+		</style>
+		</head>
+		<body>
+		<div class="container">
+			<!-- Sidebar -->
+			<div class="sidebar" id="sidebar">
+			<div class="sidebar-header">
+				<img src="https://img.icons8.com/fluency/48/api-settings.png" alt="API Icon" class="logo"/>
+				<h1>API Docs</h1>
+				<p>Kelompok1 System</p>
+			</div>
+			<nav class="nav-menu">
+				<div class="nav-item active" onclick="scrollToSection('overview')">
+				<i class="fas fa-home"></i>
+				Overview
+				</div>
+				<div class="nav-item" onclick="scrollToSection('authentication')">
+				<i class="fas fa-lock"></i>
+				Authentication
+				</div>
+				<div class="nav-item" onclick="scrollToSection('endpoints')">
+				<i class="fas fa-plug"></i>
+				Endpoints
+				</div>
+				<div class="nav-item" onclick="scrollToSection('examples')">
+				<i class="fas fa-code"></i>
+				Examples
+				</div>
+				<div class="nav-item" onclick="scrollToSection('errors')">
+				<i class="fas fa-exclamation-triangle"></i>
+				Error Handling
+				</div>
+			</nav>
+			</div>
+		
+			<!-- Main Content -->
+			<div class="main-content">
+			<div class="content-header">
+				<h1>API Documentation</h1>
+				<p>Sistem Kepegawaian - Comprehensive REST API Guide</p>
+			</div>
+		
+			<div class="content-body">
+				<!-- Info Cards -->
+				<div class="info-grid">
+				<div class="info-card">
+					<div class="info-card-header">
+					<div class="info-card-icon">
+						<i class="fas fa-server"></i>
+					</div>
+					<h3>Base Information</h3>
+					</div>
+					<ul class="info-list">
+					<li>
+						<i class="fas fa-check"></i>
+						<strong>Base URL:</strong> <a href="https://ti054c01.agussbn.my.id" target="_blank">https://ti054c01.agussbn.my.id</a>
+					</li>
+					<li>
+						<i class="fas fa-check"></i>
+						<strong>Format:</strong> JSON (form-data untuk upload)
+					</li>
+					<li>
+						<i class="fas fa-check"></i>
+						<strong>Version:</strong> v1.0
+					</li>
+					</ul>
+				</div>
+		
+				<div class="info-card">
+					<div class="info-card-header">
+					<div class="info-card-icon">
+						<i class="fas fa-shield-alt"></i>
+					</div>
+					<h3>Authentication</h3>
+					</div>
+					<ul class="info-list">
+					<li>
+						<i class="fas fa-check"></i>
+						<strong>Type:</strong> JWT Token
+					</li>
+					<li>
+						<i class="fas fa-check"></i>
+						<strong>Header:</strong> Authorization
+					</li>
+					<li>
+						<i class="fas fa-check"></i>
+						<strong>Role-based:</strong> Access Control
+					</li>
+					</ul>
+				</div>
+		
+				<div class="info-card">
+					<div class="info-card-header">
+					<div class="info-card-icon">
+						<i class="fas fa-cloud-upload-alt"></i>
+					</div>
+					<h3>File Upload</h3>
+					</div>
+					<ul class="info-list">
+					<li>
+						<i class="fas fa-check"></i>
+						<strong>Available:</strong> Specific endpoints
+					</li>
+					<li>
+						<i class="fas fa-check"></i>
+						<strong>Storage:</strong> /uploads folder
+					</li>
+					<li>
+						<i class="fas fa-check"></i>
+						<strong>Format:</strong> Multipart form-data
+					</li>
+					</ul>
+				</div>
+				</div>
+		
+				<!-- Authentication Status Info -->
+				<div class="info-card">
+				<div class="info-card-header">
+					<div class="info-card-icon">
+					<i class="fas fa-info-circle"></i>
+					</div>
+					<h3>Response Codes</h3>
+				</div>
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem;">
+					<div style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border-left: 4px solid var(--error-color);">
+					<div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+						<span class="status-badge status-error">401</span>
+						<span style="margin-left: 0.5rem; font-weight: 500;">No Token</span>
+					</div>
+					<p style="font-size: 0.875rem; color: var(--text-secondary);">Token tidak ditemukan</p>
+					</div>
+					<div style="padding: 1rem; background: rgba(245, 158, 11, 0.1); border-radius: 8px; border-left: 4px solid var(--warning-color);">
+					<div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+						<span class="status-badge status-warning">403</span>
+						<span style="margin-left: 0.5rem; font-weight: 500;">Invalid Token</span>
+					</div>
+					<p style="font-size: 0.875rem; color: var(--text-secondary);">Token tidak valid</p>
+					</div>
+					<div style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border-left: 4px solid var(--error-color);">
+					<div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+						<span class="status-badge status-error">Access Denied</span>
+					</div>
+					<p style="font-size: 0.875rem; color: var(--text-secondary);">Role tidak memiliki akses</p>
+					<div style="margin-top: 1rem; background: var(--code-bg); color: white; padding: 1rem; border-radius: 6px; position: relative;">
+						<code>{ "message": "Access Denied!" }</code>
+						<button class="copy-button" onclick="copyToClipboard(this, '{ \"message\": \"Access Denied!\" }')">
+						<i class="fas fa-copy"></i>
+						</button>
+					</div>
+					</div>
+				</div>
+				</div>
+		
+				<!-- Documentation Content -->
+				<div class="documentation-content" id="documentation">
+				` + string(parsedHTML) + `
+				</div>
+			</div>
+			</div>
+		</div>
+		
+		<script>
+			// Copy to clipboard functionality
+			function copyToClipboard(button, text) {
+			const textToCopy = text || button.previousElementSibling.textContent;
+			navigator.clipboard.writeText(textToCopy).then(() => {
+				const originalContent = button.innerHTML;
+				button.innerHTML = '<i class="fas fa-check"></i>';
+				button.classList.add('copied');
+				setTimeout(() => {
+				button.innerHTML = originalContent;
+				button.classList.remove('copied');
+				}, 2000);
+			}).catch(err => {
+				console.error('Failed to copy: ', err);
+			});
+			}
+		
+			// Smooth scroll to section
+			function scrollToSection(sectionId) {
+			const element = document.getElementById(sectionId);
+			if (element) {
+				element.scrollIntoView({ behavior: 'smooth' });
+			}
+			
+			// Update active nav item
+			document.querySelectorAll('.nav-item').forEach(item => {
 				item.classList.remove('active');
-			  });
-			  const activeItem = document.querySelector('[onclick="scrollToSection(\'' + id + '\')"]');
-			  if (activeItem) {
+			});
+			const activeItem = document.querySelector('[onclick="scrollToSection(\'' + sectionId + '\')"]');
+			if (activeItem) {
 				activeItem.classList.add('active');
-			  }
 			}
-		  });
-		}, { threshold: 0.5 });
-	
-		// Observe sections
-		document.addEventListener('DOMContentLoaded', function() {
-		  const sections = document.querySelectorAll('[id]');
-		  sections.forEach(section => {
-			observer.observe(section);
-		  });
-		});
-	  </script>
-	</body>
-	</html>`
+			}
+		
+			// Mobile sidebar toggle
+			function toggleSidebar() {
+			const sidebar = document.getElementById('sidebar');
+			sidebar.classList.toggle('open');
+			}
+		
+			// Add copy buttons to all pre elements
+			document.addEventListener('DOMContentLoaded', function() {
+			const preElements = document.querySelectorAll('pre');
+			preElements.forEach(pre => {
+				if (!pre.querySelector('.copy-button')) {
+				const button = document.createElement('button');
+				button.className = 'copy-button';
+				button.innerHTML = '<i class="fas fa-copy"></i>';
+				button.onclick = function() {
+					copyToClipboard(this, pre.textContent);
+				};
+				pre.appendChild(button);
+				}
+			});
+			});
+		
+			// Intersection Observer for active navigation
+			const observer = new IntersectionObserver((entries) => {
+			entries.forEach(entry => {
+				if (entry.isIntersecting) {
+				const id = entry.target.id;
+				document.querySelectorAll('.nav-item').forEach(item => {
+					item.classList.remove('active');
+				});
+				const activeItem = document.querySelector('[onclick="scrollToSection(\'' + id + '\')"]');
+				if (activeItem) {
+					activeItem.classList.add('active');
+				}
+				}
+			});
+			}, { threshold: 0.5 });
+		
+			// Observe sections
+			document.addEventListener('DOMContentLoaded', function() {
+			const sections = document.querySelectorAll('[id]');
+			sections.forEach(section => {
+				observer.observe(section);
+			});
+			});
+		</script>
+		</body>
+		</html>`
 
 		c.Header("Content-Type", "text/html; charset=utf-8")
 		c.String(http.StatusOK, htmlPage)

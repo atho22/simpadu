@@ -2,6 +2,7 @@ package jadwal
 
 import (
 	"net/http"
+	"simpadu/external"
 	"simpadu/helper"
 	"simpadu/structs"
 	"strings"
@@ -15,7 +16,6 @@ type InDB struct {
 	DB *gorm.DB
 }
 
-// CreateJadwal creates a new course schedule
 func (Idb *InDB) CreateJadwal(c *gin.Context) {
 	var input struct {
 		Kode_matakuliah     string    `json:"kode_matakuliah" binding:"required"`
@@ -30,80 +30,102 @@ func (Idb *InDB) CreateJadwal(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Data tidak valid"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  http.StatusBadRequest,
+			"message": "Data tidak valid",
+		})
 		return
 	}
 
-	// Validasi token
 	AuthorizationHeader := c.GetHeader("Authorization")
 	claims := helper.ExtractToken(strings.Replace(AuthorizationHeader, "Bearer ", "", -1))
 	if claims == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token tidak valid"})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  http.StatusUnauthorized,
+			"message": "Token tidak valid",
+		})
 		return
 	}
 
-	// Validasi role (admin prodi atau admin akademik)
 	if claims["role"] != "admin_prodi" && claims["role"] != "admin_akademik" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Akses ditolak"})
+		c.JSON(http.StatusForbidden, gin.H{
+			"status":  http.StatusForbidden,
+			"message": "Akses ditolak",
+		})
 		return
 	}
 
-	// Validasi jam mulai harus sebelum jam selesai
 	if input.Jam_mulai.After(input.Jam_selesai) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Jam mulai harus sebelum jam selesai"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  http.StatusBadRequest,
+			"message": "Jam mulai harus sebelum jam selesai",
+		})
 		return
 	}
 
-	// Validasi ruangan tersedia
+	// Validasi kode dosen dari API eksternal
+	isValid, err := external.IsDosenValid(input.Kode_dosen)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  http.StatusInternalServerError,
+			"message": "Gagal memvalidasi dosen dari API eksternal",
+		})
+		return
+	}
+	if !isValid {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  http.StatusBadRequest,
+			"message": "Kode dosen tidak ditemukan di sistem dosen",
+		})
+		return
+	}
+
+	// Validasi ruangan  bentrok
 	var existingJadwal structs.Jadwal_matakuliah
 	if err := Idb.DB.Where(
 		"kode_ruangan = ? AND hari = ? AND ((jam_mulai <= ? AND jam_selesai > ?) OR (jam_mulai < ? AND jam_selesai >= ?) OR (jam_mulai >= ? AND jam_selesai <= ?))",
-		input.Kode_ruangan,
-		input.Hari,
-		input.Jam_mulai,
-		input.Jam_mulai,
-		input.Jam_selesai,
-		input.Jam_selesai,
-		input.Jam_mulai,
-		input.Jam_selesai,
+		input.Kode_ruangan, input.Hari,
+		input.Jam_mulai, input.Jam_mulai,
+		input.Jam_selesai, input.Jam_selesai,
+		input.Jam_mulai, input.Jam_selesai,
 	).First(&existingJadwal).Error; err == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Ruangan sudah digunakan pada jadwal tersebut"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  http.StatusBadRequest,
+			"message": "Ruangan sudah digunakan pada jadwal tersebut",
+		})
 		return
 	}
 
-	// Validasi dosen tidak bentrok
+	// Validasi dosen bentrok
 	if err := Idb.DB.Where(
 		"kode_dosen = ? AND hari = ? AND ((jam_mulai <= ? AND jam_selesai > ?) OR (jam_mulai < ? AND jam_selesai >= ?) OR (jam_mulai >= ? AND jam_selesai <= ?))",
-		input.Kode_dosen,
-		input.Hari,
-		input.Jam_mulai,
-		input.Jam_mulai,
-		input.Jam_selesai,
-		input.Jam_selesai,
-		input.Jam_mulai,
-		input.Jam_selesai,
+		input.Kode_dosen, input.Hari,
+		input.Jam_mulai, input.Jam_mulai,
+		input.Jam_selesai, input.Jam_selesai,
+		input.Jam_mulai, input.Jam_selesai,
 	).First(&existingJadwal).Error; err == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Dosen sudah memiliki jadwal pada waktu tersebut"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  http.StatusBadRequest,
+			"message": "Dosen sudah memiliki jadwal pada waktu tersebut",
+		})
 		return
 	}
 
-	// Validasi kelas tidak bentrok
+	// Validasi kelas bentrok
 	if err := Idb.DB.Where(
 		"kelas_id = ? AND hari = ? AND ((jam_mulai <= ? AND jam_selesai > ?) OR (jam_mulai < ? AND jam_selesai >= ?) OR (jam_mulai >= ? AND jam_selesai <= ?))",
-		input.Kelas_id,
-		input.Hari,
-		input.Jam_mulai,
-		input.Jam_mulai,
-		input.Jam_selesai,
-		input.Jam_selesai,
-		input.Jam_mulai,
-		input.Jam_selesai,
+		input.Kelas_id, input.Hari,
+		input.Jam_mulai, input.Jam_mulai,
+		input.Jam_selesai, input.Jam_selesai,
+		input.Jam_mulai, input.Jam_selesai,
 	).First(&existingJadwal).Error; err == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Kelas sudah memiliki jadwal pada waktu tersebut"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  http.StatusBadRequest,
+			"message": "Kelas sudah memiliki jadwal pada waktu tersebut",
+		})
 		return
 	}
 
-	// Simpan jadwal
 	jadwal := structs.Jadwal_matakuliah{
 		Kode_matakuliah:     input.Kode_matakuliah,
 		Kelas_id:            input.Kelas_id,
@@ -119,11 +141,15 @@ func (Idb *InDB) CreateJadwal(c *gin.Context) {
 	}
 
 	if err := Idb.DB.Create(&jadwal).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan jadwal"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  http.StatusInternalServerError,
+			"message": "Gagal menyimpan jadwal",
+		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
+		"status":  http.StatusOK,
 		"message": "Jadwal berhasil dibuat",
 		"data":    jadwal,
 	})

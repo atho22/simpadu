@@ -65,7 +65,7 @@ func (Idb *InDB) CreateKelas(c *gin.Context) {
 
 	// Hitung mahasiswa (meskipun 0)
 	var jumlahMahasiswa int64
-	if err := Idb.DB.Table("kelas_mahasiswa").Where("kelas_id = ?", kelas.ID).Count(&jumlahMahasiswa).Error; err != nil {
+	if err := Idb.DB.Table("kelas_mahasiswas").Where("kelas_id = ?", kelas.ID).Count(&jumlahMahasiswa).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghitung jumlah mahasiswa"})
 		return
 	}

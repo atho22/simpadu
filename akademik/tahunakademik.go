@@ -94,6 +94,62 @@ func (Idb *InDB) CreateTahunAkademik(c *gin.Context) {
 		"message": "Berhasil Membuat Tahun Akademik",
 		"data":    tahun_akademik,
 	})
+	
+}
+func (Idb *InDB) UpdateTahunAkademik(c *gin.Context) {
+	var (
+		InputTahunAkademik structs.Tahun_akademik
+	)
+	if err := c.ShouldBindJSON(&InputTahunAkademik); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Format Request Tidak Valid"})
+		return
+	}
+
+	AuthorizationHeader := c.GetHeader("Authorization")
+	claims := helper.ExtractToken(strings.Replace(AuthorizationHeader, "Bearer ", "", -1))
+	if claims == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token tidak valid"})
+		return
+	}
+
+	tahun_akademik := structs.Tahun_akademik{
+		Tahun:           InputTahunAkademik.Tahun,
+		Semester:        InputTahunAkademik.Semester,
+		Status:          InputTahunAkademik.Status,
+		Tanggal_mulai:   InputTahunAkademik.Tanggal_mulai,
+		Tanggal_selesai: InputTahunAkademik.Tanggal_selesai,
+	}
+
+	if err := Idb.DB.Table("tahun_akademiks").Where("id = ?", id).Updates(&tahun_akademik).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal Mengupdate Tahun Akademik"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  http.StatusOK,
+		"message": "Berhasil Mengupdate Tahun Akademik",
+		"data":    tahun_akademik,
+	})
+}
+
+func (Idb *InDB) DeleteTahunAkademik(c *gin.Context) {
+	id := c.Param("id")
+
+	if err := Idb.DB.Table("tahun_akademiks").Where("id = ?", id).Delete(&structs.Tahun_akademik{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal Menghapus Tahun Akademik"})
+		return
+	}
+
+	// Update status kelas_mahasiswa
+	if err := Idb.DB.Table("kelas_mahasiswas").Where("kode_tahun_akademik = ?", id).Update("kode_tahun_akademik", "").Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal Mengupdate Status Kelas Mahasiswa"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  http.StatusOK,
+		"message": "Berhasil Menghapus Tahun Akademik",
+	})
 }
 
 func (Idb *InDB) GetAcademicSummary(c *gin.Context) {
